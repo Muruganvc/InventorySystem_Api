@@ -15,7 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Endpoints\" />
+    <ProjectReference Include="..\InventorySystem_Application\InventorySystem_Application.csproj" />
+    <ProjectReference Include="..\InventorySystem_Domain\InventorySystem_Domain.csproj" />
+    <ProjectReference Include="..\InventorySystem_Infrastructure\InventorySystem_Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
