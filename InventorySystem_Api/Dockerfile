@@ -1,37 +1,34 @@
-﻿# Use ASP.NET runtime as base
+﻿# Use ASP.NET runtime
 FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-# Use .NET SDK to build
+# Use SDK for build
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 
-# Copy project files (use relative paths since root is InventorySystem_Api)
-COPY InventorySystem_Api.csproj ./InventorySystem_Api/
-COPY ../InventorySystem_Application/InventorySystem_Application.csproj ./InventorySystem_Application/
-COPY ../InventorySystem_Domain/InventorySystem_Domain.csproj ./InventorySystem_Domain/
-COPY ../InventorySystem_Infrastructure/InventorySystem_Infrastructure.csproj ./InventorySystem_Infrastructure/
+# Copy project files
+COPY InventorySystem_Api/InventorySystem_Api.csproj InventorySystem_Api/
+COPY InventorySystem_Application/InventorySystem_Application.csproj InventorySystem_Application/
+COPY InventorySystem_Domain/InventorySystem_Domain.csproj InventorySystem_Domain/
+COPY InventorySystem_Infrastructure/InventorySystem_Infrastructure.csproj InventorySystem_Infrastructure/
 
-# Restore dependencies
-RUN dotnet restore ./InventorySystem_Api/InventorySystem_Api.csproj
+# Restore
+RUN dotnet restore InventorySystem_Api/InventorySystem_Api.csproj
 
-# Copy the rest of the code
-COPY . ./InventorySystem_Api/
-COPY ../InventorySystem_Application ./InventorySystem_Application/
-COPY ../InventorySystem_Domain ./InventorySystem_Domain/
-COPY ../InventorySystem_Infrastructure ./InventorySystem_Infrastructure/
+# Copy everything
+COPY . .
 
-# Build the project
+# Build
 WORKDIR /src/InventorySystem_Api
 RUN dotnet build InventorySystem_Api.csproj -c Release -o /app/build
 
-# Publish the project
+# Publish
 FROM build AS publish
 RUN dotnet publish InventorySystem_Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-# Final runtime image
+# Final image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
