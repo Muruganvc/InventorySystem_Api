@@ -21,7 +21,7 @@ internal sealed class CreateCompanyCommandHandler : IRequestHandler<CreateCompan
         if (IsExistCompany != null)
             return Result<int>.Failure("Entered company already exists");
 
-        var company = InventorySystem_Domain.Company.Create(request.Name, 1, request.Description);
+        var company = InventorySystem_Domain.Company.Create(request.Name, 1,request.IsActive, request.Description);
 
         var companyId = await _unitOfWork.ExecuteInTransactionAsync<int>(async () =>
         {

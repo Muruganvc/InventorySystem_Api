@@ -43,7 +43,7 @@ internal sealed class LoginCommandHandler
         var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
 
         var roles = await _roleRepository.GetListByAsync(r => roleIds.Contains(r.RoleId));
-        var roleNames = roles.Select(r => r.RoleName).ToList();
+        var roleNames = roles.Select(r => r.RoleCode).ToList();
 
         var token = GenerateJwtToken(
             user.UserName,

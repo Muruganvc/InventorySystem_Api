@@ -40,7 +40,7 @@ public static class CategoryEndPoints
         {
             var command = new UpdateCategoryCommand(
                 categoryId,
-                request.Name,
+                request.CategoryName,
                 request.CompanyId,
                 request.Description,
                 request.IsActive,

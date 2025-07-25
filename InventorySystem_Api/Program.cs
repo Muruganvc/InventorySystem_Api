@@ -51,12 +51,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AllRoles", policy => policy.RequireRole("Administrator", "Super Administrator", "User"));
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Administrator", "Super Administrator"));
-    options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
-    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("Super Administrator"));
+    options.AddPolicy("AllRoles", policy => policy.RequireRole("ADMIN", "SUPERADMIN", "User"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN", "SUPERADMIN"));
+    options.AddPolicy("UserOnly", policy => policy.RequireRole("USER"));
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SUPERADMIN"));
 });
- 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -88,7 +98,7 @@ app.UseGlobalExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowCors");
 app.UseSwagger();
 app.UseSwaggerUI();
 

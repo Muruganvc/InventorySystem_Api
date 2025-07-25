@@ -2,4 +2,4 @@
 using MediatR;
 
 namespace InventorySystem_Application.Company.GetCompaniesQuery;
-public record GetCompaniesQuery(): IRequest<IResult<IReadOnlyList<GetCompaniesQueryResponse>>>;
+public record GetCompaniesQuery(bool IsAllActiveCompany) : IRequest<IResult<IReadOnlyList<GetCompaniesQueryResponse>>>;

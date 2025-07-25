@@ -18,6 +18,7 @@ internal sealed class GetCompanyCategoryProductsQueryHandler :
     {
         var categoryProducts = await _productCategoryRepository.Table
           .AsNoTracking()
+          .Where(c => request.IsAllActiveCompany || (c.IsActive && c.Category.IsActive))
           .Select(p => new GetCompanyCategoryProductsQueryResponse(
               p.ProductCategoryId,
               p.ProductCategoryName,

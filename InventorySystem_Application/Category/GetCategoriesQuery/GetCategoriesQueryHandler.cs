@@ -22,7 +22,8 @@ internal sealed class GetCategoriesQueryHandler
                 c.CategoryId, c.CategoryName,
                 c.Company.CompanyId, c.Company.CompanyName,
                 c.Description, c.IsActive, c.RowVersion,
-                c.CreatedByUser.UserName
+                c.CreatedByUser.UserName,
+                c.CreatedAt
             ))
             .ToListAsync(cancellationToken);
 

@@ -2,4 +2,4 @@
 using MediatR;
 
 namespace InventorySystem_Application.Company.UpdateCompnayCommand;
-public record UpdateCompnayCommand(int Id, string Name, string? Description,bool IsActive,  uint RowVersion) : IRequest<IResult<bool>>;
+public record UpdateCompnayCommand(int CompanyId, string CompanyName, string? Description, bool IsActive, uint RowVersion) : IRequest<IResult<bool>>;

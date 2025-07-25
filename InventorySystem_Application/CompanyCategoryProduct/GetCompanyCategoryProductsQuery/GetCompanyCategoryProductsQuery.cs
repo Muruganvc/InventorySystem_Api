@@ -2,6 +2,6 @@
 using MediatR;
 
 namespace InventorySystem_Application.CompanyCategoryProduct.GetCompanyCategoryProductsQuery;
-public record GetCompanyCategoryProductsQuery():
+public record GetCompanyCategoryProductsQuery(bool IsAllActiveCompany) :
     IRequest<IResult<IReadOnlyList<GetCompanyCategoryProductsQueryResponse>>>;
 

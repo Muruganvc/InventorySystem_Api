@@ -15,7 +15,7 @@ internal sealed class UpdateCompnayCommandHandler : IRequestHandler<UpdateCompna
     }
     public async Task<IResult<bool>> Handle(UpdateCompnayCommand request, CancellationToken cancellationToken)
     {
-        var company = await _companyRepository.GetByAsync(c => c.CompanyId == request.Id);
+        var company = await _companyRepository.GetByAsync(c => c.CompanyId == request.CompanyId);
 
         if (company is null)
             return Result<bool>.Failure("Selected company not found.");
@@ -23,7 +23,7 @@ internal sealed class UpdateCompnayCommandHandler : IRequestHandler<UpdateCompna
         if (company.RowVersion != request.RowVersion)
             return Result<bool>.Failure("The company has been modified by another user. Please reload and try again.");
 
-        company.Update(request.Name, request.Description, modifiedBy: 1); // Replace `1` with actual user ID if available
+        company.Update(request.CompanyName,request.IsActive, request.Description, modifiedBy: 1); // Replace `1` with actual user ID if available
 
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {

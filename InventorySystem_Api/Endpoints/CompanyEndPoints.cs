@@ -39,7 +39,7 @@ public static class CompanyEndpoints
         {
             var command = new UpdateCompnayCommand(
                 companyId,
-                request.Name,
+                request.CompanyName,
                 request.Description,
                 request.IsActive,
                 request.RowVersion
@@ -67,9 +67,9 @@ public static class CompanyEndpoints
         .Produces(400);
 
         // GET: Get All Companies
-        app.MapGet("/companies", async (IMediator mediator) =>
+        app.MapGet("/companies", async (bool isAllActiveCompany,IMediator mediator) =>
         {
-            var result = await mediator.Send(new GetCompaniesQuery());
+            var result = await mediator.Send(new GetCompaniesQuery(isAllActiveCompany));
             return Results.Ok(result);
         })
         .WithName("GetCompanies")

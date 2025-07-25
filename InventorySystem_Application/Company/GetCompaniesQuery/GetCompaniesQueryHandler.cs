@@ -18,15 +18,15 @@ internal sealed class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQue
     {
         var companies = await _companyRepository.Table
             .AsNoTracking()
+           .Where(c => request.IsAllActiveCompany || c.IsActive)
             .Select(c => new GetCompaniesQueryResponse(
                 c.CompanyId,
                 c.CompanyName,
                 c.Description ?? string.Empty,
                 c.IsActive,
-                c.RowVersion,
+                c.RowVersion,c.CreatedAt,
                 c.CreatedByUser.UserName
-            ))
-            .ToListAsync(cancellationToken);
+            )).ToListAsync(cancellationToken);
 
         return Result<IReadOnlyList<GetCompaniesQueryResponse>>.Success(companies);
     }

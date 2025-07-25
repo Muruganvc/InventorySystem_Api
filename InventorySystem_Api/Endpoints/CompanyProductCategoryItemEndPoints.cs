@@ -69,9 +69,9 @@ public static class CompanyProductCategoryItemEndPoints
         .Produces(400);
 
         // Get All Company Category Products
-        app.MapGet("/company-category-products", async (IMediator mediator) =>
+        app.MapGet("/company-category-products", async (bool isAllActive, IMediator mediator) =>
         {
-            var result = await mediator.Send(new GetCompanyCategoryProductsQuery());
+            var result = await mediator.Send(new GetCompanyCategoryProductsQuery(isAllActive));
             return Results.Ok(result);
         })
         .WithName("GetCompanyCategoryProducts")
