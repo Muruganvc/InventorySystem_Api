@@ -43,7 +43,8 @@ public static class CompanyProductCategoryItemEndPoints
                 request.CompanyCategoryProductItemName,
                 request.CategoryId,
                 request.Description,
-                request.IsActive
+                request.IsActive,
+                request.RowVersion
             );
 
             var result = await mediator.Send(command);

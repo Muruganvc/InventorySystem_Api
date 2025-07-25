@@ -33,11 +33,14 @@ internal sealed class CreateCompanyCategoryProductCommandHandler : IRequestHandl
 
         var productItem = ProductCategory.Create(request.CompanyCategoryProductItemName, request.CategoryId,
             1, request.Description, request.IsActive);
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+
+        var productItemId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            await _unitOfWork.Repository<ProductCategory>().AddAsync(productItem);
+            await _productCategoryRepository.AddAsync(productItem);
             await _unitOfWork.SaveAsync();
+            return productItem.ProductCategoryId;
         }, cancellationToken);
-        return Result<int>.Success(productItem.CategoryId);
+
+        return Result<int>.Success(productItemId);
     }
 }

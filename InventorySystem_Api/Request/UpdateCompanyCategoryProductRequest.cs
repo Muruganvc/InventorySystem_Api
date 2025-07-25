@@ -4,4 +4,4 @@ public record UpdateCompanyCategoryProductRequest(int CompanyCategoryProductItem
             string CompanyCategoryProductItemName,
             int CategoryId,
             string? Description,
-            bool IsActive);
+            bool IsActive, uint RowVersion);

@@ -19,6 +19,7 @@ public class Product
     public ProductCategory ProductCategory { get; set; } = default!;
     public User CreatedByUser { get; set; } = default!;
     public User? ModifiedByUser { get; set; }
+    public uint RowVersion { get; }
 
     public static Product Create( string productName, int productCategoryId,
         string? description, decimal mrp, decimal salesPrice, int quantity,
@@ -51,6 +52,18 @@ public class Product
         IsActive = isActive;
         ModifiedAt = DateTime.UtcNow;
         ModifiedBy = updatedBy;
+    }
+
+    public void SetActiveInactive(int modifiedBy)
+    {
+        IsActive = !IsActive;
+        ModifiedBy = modifiedBy;
+    }
+
+    public void QuantityUpdate(int quantity, int modifiedBy)
+    {
+        Quantity = quantity;
+        ModifiedBy = modifiedBy;
     }
 
 }

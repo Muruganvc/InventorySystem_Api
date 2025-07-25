@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Application.Common;
+using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
 
@@ -22,14 +23,17 @@ internal class UpdateCompanyCategoryProductCommandHandler : IRequestHandler<Upda
         if (productCategory == null)
             return Result<bool>.Failure("Selected product category not found");
 
+        if (productCategory.RowVersion != request.RowVersion)
+            return Result<bool>.Failure("The company category product has been modified by another user. Please reload and try again.");
+
         var category = await _categoryRepository.GetByAsync(a => a.CategoryId == request.CategoryId);
         if (category == null) return Result<bool>.Failure("Selected category not found");
 
         productCategory.Update(request.CompanyCategoryProductItemName, request.CategoryId, request.Description, request.IsActive, 1);
-        var isSuccess = false;
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
-            isSuccess = await _unitOfWork.SaveAsync() > 0;
+            var affectedRows = await _unitOfWork.SaveAsync();
+            return affectedRows > 0;
         }, cancellationToken);
 
         return Result<bool>.Success(isSuccess);

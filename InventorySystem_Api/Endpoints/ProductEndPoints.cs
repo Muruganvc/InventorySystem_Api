@@ -2,7 +2,9 @@
 using InventorySystem_Application.Product.CreateProductCommand;
 using InventorySystem_Application.Product.GetProductQuery;
 using InventorySystem_Application.Product.GetProductsQuery;
+using InventorySystem_Application.Product.SetActiveInactiveCommand;
 using InventorySystem_Application.Product.UpdateProductCommand;
+using InventorySystem_Application.Product.UpdateProductQuantityCommand;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,7 +39,7 @@ public static class ProductEndPoints
         {
             var command = new UpdateProductCommand(productId, request.ProductName,
                 request.ProductCategoryId, request.Description, request.Mrp,
-                request.SalesPrice, request.Quantity, request.LandingPrice, request.IsActive);
+                request.SalesPrice, request.Quantity, request.LandingPrice, request.IsActive,request.RowVersion);
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
@@ -70,6 +72,37 @@ public static class ProductEndPoints
         .WithOpenApi()
         .Produces(200)
         .Produces(400);
+
+        // Update Product Quantity
+        app.MapPut("/products/{productId}/quantity", async (
+            int productId,
+            [FromBody] UpdateProductQuantityRequest request,
+            IMediator mediator) =>
+        {
+            var command = new UpdateProductQuantityCommand(productId,request.Quantity,request.RowVersion);
+            var result = await mediator.Send(command);
+            return Results.Ok(result);
+        })
+        .WithName("UpdateProductQuantity")
+        .WithOpenApi()
+        .Produces(200)
+        .Produces(400);
+
+        // Update Product
+        app.MapPut("/products/{productId}/status", async (
+            int productId,
+            [FromBody] UpdateProductStatusRequest request,
+            IMediator mediator) =>
+        {
+            var command = new SetActiveInactiveCommand(productId,request.RowVersion);
+            var result = await mediator.Send(command);
+            return Results.Ok(result);
+        })
+        .WithName("UpdateProductStatus")
+        .WithOpenApi()
+        .Produces(200)
+        .Produces(400);
+
         return app;
     }
 }

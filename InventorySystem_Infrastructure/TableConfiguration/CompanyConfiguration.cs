@@ -43,8 +43,6 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .HasColumnName("modified_by")
             .IsRequired(false);
 
-        builder.Property(c => c.RowVersion).IsRowVersion();
-
         // Foreign keys (assuming Users table exists with UserId)
 
         builder.HasMany(c => c.Categories)

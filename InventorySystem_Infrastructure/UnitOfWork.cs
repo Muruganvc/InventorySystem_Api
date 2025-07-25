@@ -10,11 +10,12 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     }
     public IRepository<T> Repository<T>() where T : class
       => new Repository<T>(_context);
-    public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken)
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        await action();
-        await transaction.CommitAsync();
+        var result = await action();
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
     public async Task<int> SaveAsync() => await _context.SaveChangesAsync();
     public void Dispose() => _context.Dispose();

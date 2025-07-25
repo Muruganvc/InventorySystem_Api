@@ -43,7 +43,8 @@ public static class CategoryEndPoints
                 request.Name,
                 request.CompanyId,
                 request.Description,
-                request.IsActive
+                request.IsActive,
+                request.RowVersion
             );
 
             var result = await mediator.Send(command);

@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Application.Common;
+using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
 
@@ -23,6 +24,9 @@ internal sealed class UpdateCategoryCommandHandler : IRequestHandler<UpdateCateg
         if (category is null)
             return Result<bool>.Failure("Selected category not found.");
 
+        if (category.RowVersion != request.RowVersion)
+            return Result<bool>.Failure("The category has been modified by another user. Please reload and try again.");
+
         var company = await _companyRepository.GetByAsync(c => c.CompanyId == request.CompanyId);
         if (company is null)
             return Result<bool>.Failure("Selected company not found.");
@@ -35,10 +39,10 @@ internal sealed class UpdateCategoryCommandHandler : IRequestHandler<UpdateCateg
             modifiedBy: 1
         );
 
-        var isSuccess = false;
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
-            isSuccess = await _unitOfWork.SaveAsync() > 0;
+            var affectedRows = await _unitOfWork.SaveAsync();
+            return affectedRows > 0;
         }, cancellationToken);
 
         return Result<bool>.Success(isSuccess);

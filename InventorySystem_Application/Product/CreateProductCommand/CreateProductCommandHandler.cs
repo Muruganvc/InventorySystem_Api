@@ -16,19 +16,21 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
     }
     public async Task<IResult<int>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        var isExistProduct = await _productRepository.GetByAsync(a => a.ProductName == request.ProductName 
-        && a.ProductCategoryId == request.ProductCategoryId );
+        var isExistProduct = await _productRepository.GetByAsync(a => a.ProductName == request.ProductName
+        && a.ProductCategoryId == request.ProductCategoryId);
         if (isExistProduct is not null)
             return Result<int>.Failure("Selected product name already exists.");
 
         var product = InventorySystem_Domain.Product.Create(request.ProductName, request.ProductCategoryId, request.Description,
             request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, 1);
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var productIId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            await _unitOfWork.Repository<InventorySystem_Domain.Product>().AddAsync(product);
+            await _productRepository.AddAsync(product);
             await _unitOfWork.SaveAsync();
+            return product.ProductId;
         }, cancellationToken);
-        return Result<int>.Success(product.ProductId);
+
+        return Result<int>.Success(productIId);
     }
 }

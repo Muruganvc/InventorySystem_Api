@@ -20,16 +20,15 @@ internal sealed class UpdateCompnayCommandHandler : IRequestHandler<UpdateCompna
         if (company is null)
             return Result<bool>.Failure("Selected company not found.");
 
-        if (company.RowVersion != request.Version)
+        if (company.RowVersion != request.RowVersion)
             return Result<bool>.Failure("The company has been modified by another user. Please reload and try again.");
 
         company.Update(request.Name, request.Description, modifiedBy: 1); // Replace `1` with actual user ID if available
 
-        var isSuccess = false;
-
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
-            isSuccess = await _unitOfWork.SaveAsync() > 0;
+            var affectedRows = await _unitOfWork.SaveAsync();
+            return affectedRows > 0;
         }, cancellationToken);
 
         return Result<bool>.Success(isSuccess);

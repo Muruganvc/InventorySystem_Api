@@ -7,5 +7,5 @@ public record UpdateCompanyCategoryProductCommand(int CompanyCategoryProductItem
             string CompanyCategoryProductItemName, 
             int CategoryId, 
             string? Description, 
-            bool IsActive):IRequest<IResult<bool>>;
+            bool IsActive, uint RowVersion) :IRequest<IResult<bool>>;
 

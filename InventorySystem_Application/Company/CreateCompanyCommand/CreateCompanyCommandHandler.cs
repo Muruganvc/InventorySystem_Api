@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Application.Common;
+using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
 
@@ -22,11 +23,13 @@ internal sealed class CreateCompanyCommandHandler : IRequestHandler<CreateCompan
 
         var company = InventorySystem_Domain.Company.Create(request.Name, 1, request.Description);
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var companyId = await _unitOfWork.ExecuteInTransactionAsync<int>(async () =>
         {
-            await _unitOfWork.Repository<InventorySystem_Domain.Company>().AddAsync(company);
+            await _companyRepository.AddAsync(company);
             await _unitOfWork.SaveAsync();
+            return company.CompanyId;
         }, cancellationToken);
-        return Result<int>.Success(company.CompanyId);
+
+        return Result<int>.Success(companyId);
     }
 }

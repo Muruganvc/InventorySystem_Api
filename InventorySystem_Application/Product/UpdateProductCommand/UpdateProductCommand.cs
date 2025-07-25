@@ -6,5 +6,6 @@ namespace InventorySystem_Application.Product.UpdateProductCommand;
 public record UpdateProductCommand(int ProductId, string ProductName, int ProductCategoryId,
     string? Description, decimal Mrp, decimal SalesPrice, int Quantity,
     decimal LandingPrice,
-    bool IsActive = false
+    bool IsActive,
+    uint RowVersion
 ) : IRequest<IResult<bool>>;

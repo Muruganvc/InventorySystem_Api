@@ -75,6 +75,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey(p => p.ModifiedBy)
             .HasConstraintName("fk_modified_by");
 
+        builder.Property(c => c.RowVersion).IsRowVersion();
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Application.Common;
+using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
 
@@ -27,11 +28,13 @@ internal sealed class CreateCategoryCommandHandler : IRequestHandler<CreateCateg
 
         var category = InventorySystem_Domain.Category.Create(request.CategoryName, request.CompanyId, 1, request.Description, request.IsActive);
 
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var categoryId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            await _unitOfWork.Repository<InventorySystem_Domain.Category>().AddAsync(category);
+            await _categoryRepository.AddAsync(category);
             await _unitOfWork.SaveAsync();
+            return category.CategoryId;
         }, cancellationToken);
-        return Result<int>.Success(category.CategoryId);
+
+        return Result<int>.Success(categoryId);
     }
 }

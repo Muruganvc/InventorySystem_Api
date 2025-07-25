@@ -3,5 +3,5 @@ using MediatR;
 
 namespace InventorySystem_Application.Category.UpdateCategoryCommand;
 
-public record UpdateCategoryCommand(int CategoryId, string Name, int CompanyId, string? Description, bool IsActive)
+public record UpdateCategoryCommand(int CategoryId, string Name, int CompanyId, string? Description, bool IsActive, uint RowVersion)
     : IRequest<IResult<bool>>;
