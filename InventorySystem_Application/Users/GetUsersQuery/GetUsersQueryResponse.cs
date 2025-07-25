@@ -22,6 +22,7 @@ public class GetUsersQueryResponse : IMapFrom<User>
     public DateTime CreatedDate { get; set; }
     public int? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
+    public uint RowVersion { get; set; }
 
     public void Mapping(Profile profile)
     {

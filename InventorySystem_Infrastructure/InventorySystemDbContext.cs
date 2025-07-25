@@ -1,5 +1,4 @@
-﻿using InventorySystem_Domain;
-using InventorySystem_Infrastructure.TableConfiguration;
+﻿using InventorySystem_Infrastructure.TableConfiguration;
 using Microsoft.EntityFrameworkCore;
 namespace InventorySystem_Infrastructure;
 public class InventorySystemDbContext : DbContext
@@ -8,10 +7,13 @@ public class InventorySystemDbContext : DbContext
        : base(options)
     {
     }
-    public DbSet<User> Users { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new CompanyConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductCategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
     }
 }

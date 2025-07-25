@@ -32,16 +32,20 @@ builder.Services.AddMediatR(cfg =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//if (app.Environment.IsDevelopment())
+//{
+app.UseSwagger();
+app.UseSwaggerUI();
+//}
 app.MapCustomHealthCheck();
 
 app.UseGlobalExceptionHandler();
 
-app.MapUserEndpoints();
+app.MapUserEndpoints()
+   .MapCompanyEndpoints()
+   .MapCategoryEndpoints()
+   .MapCompanyCategoryProductEndpoints()
+   .MapProductEndpoints();
 
 app.UseHttpsRedirection();
 

@@ -1,6 +1,5 @@
 ﻿using InventorySystem_Application.Users.GetUsersQuery;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 
 namespace InventorySystem_Api.Endpoints;
 public static class UserEndPoints
@@ -12,7 +11,7 @@ public static class UserEndPoints
     /// <returns>The modified <see cref="IEndpointRouteBuilder"/> with user routes mapped.</returns>
     public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/users", async ([FromServices] IMediator mediator) =>
+        app.MapGet("/users", async (IMediator mediator) =>
         {
             var query = new GetUsersQuery();
             var result = await mediator.Send(query);

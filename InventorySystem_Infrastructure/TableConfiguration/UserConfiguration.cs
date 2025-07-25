@@ -39,5 +39,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.CreatedDate).HasColumnName("created_date").IsRequired();
         entity.Property(e => e.ModifiedBy).HasColumnName("modified_by");
         entity.Property(e => e.ModifiedDate).HasColumnName("modified_date");
+        entity.Property(c => c.RowVersion).IsRowVersion();
     }
 }

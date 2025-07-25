@@ -18,4 +18,5 @@ public class User
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public int? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
+    public uint RowVersion { get; }
 }
