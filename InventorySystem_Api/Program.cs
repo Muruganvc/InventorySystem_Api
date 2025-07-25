@@ -3,19 +3,22 @@ using InventorySystem_Api.Endpoints;
 using InventorySystem_Application.Common.Mapper;
 using InventorySystem_Domain.Common;
 using InventorySystem_Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-
+var builder = WebApplication.CreateBuilder(args); 
+var config = builder.Configuration;
+var jwtSection = config.GetSection("JwtSettings");
 builder.Services.AddDbContext<InventorySystemDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
+ 
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MappingProfile>();
@@ -29,24 +32,76 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblies(assemblies);
 });
+ 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            RoleClaimType = ClaimTypes.Role,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        };
+    });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AllRoles", policy => policy.RequireRole("Administrator", "Super Administrator", "User"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Administrator", "Super Administrator"));
+    options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("Super Administrator"));
+});
+ 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token like this: Bearer {your token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+ 
 var app = builder.Build();
-
-//if (app.Environment.IsDevelopment())
-//{
-app.UseSwagger();
-app.UseSwaggerUI();
-//}
-app.MapCustomHealthCheck();
-
+ 
 app.UseGlobalExceptionHandler();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseHttpsRedirection();
+
+// Health Check (if implemented)
+app.MapCustomHealthCheck();
+
+// Modular API Endpoints
 app.MapUserEndpoints()
    .MapCompanyEndpoints()
    .MapCategoryEndpoints()
    .MapCompanyCategoryProductEndpoints()
    .MapProductEndpoints();
-
-app.UseHttpsRedirection();
 
 app.Run();

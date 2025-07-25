@@ -12,14 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Users\GetUserQuery\" />
-    <Folder Include="Users\CreateUserCommand\" />
-    <Folder Include="Users\UpdateUserCommand\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="15.0.1" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="MediatR" Version="13.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.0" />
   </ItemGroup>
 
 </Project>

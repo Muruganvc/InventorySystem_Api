@@ -19,4 +19,47 @@ public class User
     public int? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
     public uint RowVersion { get; }
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<UserMenuPermission> UserMenuPermissions { get; set; } = new List<UserMenuPermission>();
+
+    public static User Create(string firstName, string? lastName, string userName,
+        string password, string email, string mobileNo, int createdBy)
+    {
+        return new User
+        {
+            FirstName = firstName,
+            LastName = lastName ?? string.Empty,
+            UserName = userName,
+            Email = email,
+            MobileNo = mobileNo,
+            PasswordHash = password,
+            CreatedDate = DateTime.UtcNow,
+            CreatedBy = createdBy
+        };
+    }
+
+    public void Update(string firstName, string? lastName, string email,
+        string mobileNo, byte[]? profileImage, int modifiedBy)
+    {
+        FirstName = firstName;
+        LastName = lastName ?? null;
+        Email = email;
+        MobileNo = mobileNo;
+        ProfileImage = profileImage;
+        ModifiedBy = modifiedBy;
+        ModifiedDate = DateTime.UtcNow;
+    }
+    public void SetActiveStatus(bool isActive, int modifiedBy)
+    {
+        IsActive = isActive;
+        ModifiedBy = modifiedBy;
+        ModifiedDate = DateTime.UtcNow;
+    }
+
+    public void ChangePassword(string password)
+    {
+        PasswordHash = password;
+        PasswordLastChanged = DateTime.UtcNow;
+        IsPasswordExpired = false;
+    }
 }

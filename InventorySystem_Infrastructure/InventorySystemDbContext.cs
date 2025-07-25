@@ -15,5 +15,10 @@ public class InventorySystemDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ProductCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new RoleConfiguration());
+        modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
+        modelBuilder.ApplyConfiguration(new InventoryCompanyInfoConfiguration());
+        modelBuilder.ApplyConfiguration(new MenuItemConfiguration());
+        modelBuilder.ApplyConfiguration(new UserMenuPermissionConfiguration());
     }
 }
