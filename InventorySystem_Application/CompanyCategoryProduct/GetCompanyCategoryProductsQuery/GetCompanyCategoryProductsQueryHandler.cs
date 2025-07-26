@@ -17,20 +17,23 @@ internal sealed class GetCompanyCategoryProductsQueryHandler :
     public async Task<IResult<IReadOnlyList<GetCompanyCategoryProductsQueryResponse>>> Handle(GetCompanyCategoryProductsQuery request, CancellationToken cancellationToken)
     {
         var categoryProducts = await _productCategoryRepository.Table
-          .AsNoTracking()
-          .Where(c => request.IsAllActiveCompany || (c.IsActive && c.Category.IsActive))
-          .Select(p => new GetCompanyCategoryProductsQueryResponse(
-              p.ProductCategoryId,
-              p.ProductCategoryName,
-              p.Category.CategoryId,
-              p.Category.CategoryName,
-              p.Description,
-              p.IsActive,
-              p.RowVersion,
-              p.CreatedByUser.UserName
-          ))
-            .ToListAsync(cancellationToken);
-
+    .Include(p => p.Category).ThenInclude(c => c.Company)
+    .AsNoTracking()
+    .Where(p => request.IsAllActiveCompany || (p.IsActive && p.Category.IsActive))
+    .Select(p => new GetCompanyCategoryProductsQueryResponse(
+        p.ProductCategoryId,
+        p.ProductCategoryName,
+        p.Category.CategoryId,
+        p.Category.CategoryName,
+        p.Category.Company.CompanyId,
+        p.Category.Company.CompanyName,
+        p.Description,
+        p.IsActive,
+        p.RowVersion,
+        p.CreatedByUser.UserName,
+        p.CreatedAt
+    ))
+    .ToListAsync(cancellationToken);
         return Result<IReadOnlyList<GetCompanyCategoryProductsQueryResponse>>.Success(categoryProducts);
     }
 }

@@ -20,6 +20,7 @@ public class Product
     public User CreatedByUser { get; set; } = default!;
     public User? ModifiedByUser { get; set; }
     public uint RowVersion { get; }
+    public ICollection<OrderItem>? OrderItems { get; set; }
 
     public static Product Create( string productName, int productCategoryId,
         string? description, decimal mrp, decimal salesPrice, int quantity,

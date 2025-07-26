@@ -112,6 +112,7 @@ app.MapUserEndpoints()
    .MapCompanyEndpoints()
    .MapCategoryEndpoints()
    .MapCompanyCategoryProductEndpoints()
-   .MapProductEndpoints();
+   .MapProductEndpoints()
+   .MapDashboardEndpoints();
 
 app.Run();

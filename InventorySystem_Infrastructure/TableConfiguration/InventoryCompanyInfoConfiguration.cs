@@ -77,6 +77,8 @@ public class InventoryCompanyInfoConfiguration : IEntityTypeConfiguration<Invent
 
         builder.Property(e => e.QrCode)
                .HasColumnName("qr_code")
-               .IsRequired();
+               .IsRequired(false);
+
+        builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

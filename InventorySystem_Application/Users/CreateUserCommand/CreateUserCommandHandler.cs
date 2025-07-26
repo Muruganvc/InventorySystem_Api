@@ -21,7 +21,8 @@ internal sealed class CreateUserCommandHandler :
         if (IsExistCompany != null)
             return Result<int>.Failure("Username already exists.");
 
-        var user = User.Create(request.FirstName, request.LastName, request.UserName, request.Password,
+        var user = User.Create(request.FirstName, request.LastName, request.UserName, 
+            BCrypt.Net.BCrypt.HashPassword(request.Password),
             request.Email, request.MobileNo, 1);
 
         var userId = await _unitOfWork.ExecuteInTransactionAsync<int>(async () =>

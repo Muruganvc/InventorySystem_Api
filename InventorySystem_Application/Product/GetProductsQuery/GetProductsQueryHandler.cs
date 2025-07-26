@@ -15,23 +15,37 @@ internal sealed class GetProductsQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetProductsQueryResponse>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
+        bool isSales = request.type.ToLower() == "sales";
         var result = await _productRepository.Table
             .AsNoTracking()
-            .Select(p => new GetProductsQueryResponse(
-                p.ProductId,
-                p.ProductName,
-                p.ProductCategory.CategoryId,
-                p.ProductCategory.ProductCategoryName,
-                p.Description,
-                p.MRP,
-                p.SalesPrice,
-                p.LandingPrice,
-                p.Quantity,
-                p.IsActive,
-                p.CreatedByUser.UserName
+            .Include(p => p.ProductCategory)
+                .ThenInclude(pc => pc.Category)
+                    .ThenInclude(c => c.Company)
+            .Where(p => isSales ||
+                (p.IsActive &&
+                p.ProductCategory.IsActive &&
+                p.ProductCategory.Category.IsActive &&
+                p.ProductCategory.Category.Company.IsActive)
+            ).Select(p => new GetProductsQueryResponse(p.ProductId,
+                    p.ProductName,
+                    p.ProductCategoryId,
+                    p.ProductCategory.ProductCategoryName,
+                    p.ProductCategory.Category.CategoryId,
+                    p.ProductCategory.Category.CategoryName,
+                    p.ProductCategory.Category.Company.CompanyId,
+                    p.ProductCategory.Category.Company.CompanyName,
+                    p.Description,
+                    p.MRP,
+                    p.SalesPrice,
+                    p.LandingPrice,
+                    p.Quantity,
+                    p.IsActive,
+                    p.CreatedByUser.UserName,
+                    p.RowVersion
             ))
             .ToListAsync(cancellationToken);
 
         return Result<IReadOnlyList<GetProductsQueryResponse>>.Success(result);
     }
+
 }

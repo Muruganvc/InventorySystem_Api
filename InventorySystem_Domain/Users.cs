@@ -21,7 +21,7 @@ public class User
     public uint RowVersion { get; }
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<UserMenuPermission> UserMenuPermissions { get; set; } = new List<UserMenuPermission>();
-
+    public ICollection<OrderItem>? CreatedOrderItems { get; set; }
     public static User Create(string firstName, string? lastName, string userName,
         string password, string email, string mobileNo, int createdBy)
     {

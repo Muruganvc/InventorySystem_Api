@@ -2,6 +2,7 @@
 using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventorySystem_Application.CompanyCategoryProduct.CreateCompanyCategoryProduct;
 
@@ -21,17 +22,22 @@ internal sealed class CreateCompanyCategoryProductCommandHandler : IRequestHandl
 
     public async Task<IResult<int>> Handle(CreateCompanyCategoryProductCommand request, CancellationToken cancellationToken)
     {
-
-        var isExistscompany = await _categoryRepository.GetByAsync(a => a.CategoryId == request.CategoryId);
-        if (isExistscompany == null)
+        var isExistsCategory = await _categoryRepository.Table
+            .Include(c => c.Company).FirstOrDefaultAsync(c => c.CategoryId == request.CategoryId, cancellationToken);
+        if (isExistsCategory == null)
             return Result<int>.Failure("Selected category not found.");
 
-        var isExistsItem = await _productCategoryRepository.GetByAsync(a => a.CategoryId == request.CategoryId
-            && a.ProductCategoryName == request.CompanyCategoryProductItemName);
-        if (isExistsItem != null)
-            return Result<int>.Failure($"A Product Item named '{request.CompanyCategoryProductItemName}' already exists for the selected category.");
+        var isExistsItem = await _productCategoryRepository.GetByAsync(a =>
+            a.CategoryId == request.CategoryId &&
+            a.ProductCategoryName.Replace(" ", string.Empty).ToLower() ==
+            request.ProductCategoryName.Replace(" ", string.Empty).ToLower()
+        );
 
-        var productItem = ProductCategory.Create(request.CompanyCategoryProductItemName, request.CategoryId,
+        if (isExistsItem != null)
+        {
+            return Result<int>.Failure($"A Product Item named '{request.ProductCategoryName}' already exists for the selected category.");
+        }
+        var productItem = ProductCategory.Create(request.ProductCategoryName, request.CategoryId,
             1, request.Description, request.IsActive);
 
         var productItemId = await _unitOfWork.ExecuteInTransactionAsync(async () =>

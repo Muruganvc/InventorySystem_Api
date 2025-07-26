@@ -20,7 +20,7 @@ public class Company //: BaseEntity
     public int CreatedBy { get; set; }
     public DateTime ModifiedAt { get; set; }
     public int? ModifiedBy { get; set; }
-    public uint RowVersion { get; private set; }
+    public uint RowVersion { get; }
     public ICollection<Category> Categories { get; private set; } = new List<Category>();
     public static Company Create(string companyName, int createdBy, bool isActive, string? description = null)
     {

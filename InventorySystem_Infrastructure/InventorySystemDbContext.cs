@@ -20,5 +20,8 @@ public class InventorySystemDbContext : DbContext
         modelBuilder.ApplyConfiguration(new InventoryCompanyInfoConfiguration());
         modelBuilder.ApplyConfiguration(new MenuItemConfiguration());
         modelBuilder.ApplyConfiguration(new UserMenuPermissionConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
     }
 }

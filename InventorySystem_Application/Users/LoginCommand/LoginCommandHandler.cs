@@ -36,8 +36,8 @@ internal sealed class LoginCommandHandler
         if (user is null)
             return Result<LoginCommandResponse>.Failure("Invalid user name");
 
-        //if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-        //    return Result<LoginCommandResponse>.Failure("Invalid password");
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            return Result<LoginCommandResponse>.Failure("Invalid password");
 
         var userRoles = await _userRoleRepository.GetListByAsync(ur => ur.UserId == user.UserId);
         var roleIds = userRoles.Select(ur => ur.RoleId).ToList();

@@ -8,6 +8,7 @@ public class MenuItem
     public string? Route { get; set; }
     public int? ParentId { get; set; }
     public int? OrderBy { get; set; }
+    public uint RowVersion { get; }
 
     // Navigation properties
     public MenuItem? Parent { get; set; }

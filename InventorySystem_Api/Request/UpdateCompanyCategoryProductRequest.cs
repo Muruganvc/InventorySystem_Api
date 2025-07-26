@@ -1,7 +1,6 @@
 ﻿namespace InventorySystem_Api.Request;
 
-public record UpdateCompanyCategoryProductRequest(int CompanyCategoryProductItemId,
-            string CompanyCategoryProductItemName,
+public record UpdateCompanyCategoryProductRequest(string ProductCategoryName,
             int CategoryId,
             string? Description,
             bool IsActive, uint RowVersion);

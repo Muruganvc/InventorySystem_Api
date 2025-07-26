@@ -18,7 +18,7 @@ public static class CompanyProductCategoryItemEndPoints
             IMediator mediator) =>
         {
             var command = new CreateCompanyCategoryProductCommand(
-                request.CompanyCategoryProductItemName,
+                request.categoryProductName,
                 request.CategoryId,
                 request.Description,
                 request.IsActive
@@ -40,7 +40,7 @@ public static class CompanyProductCategoryItemEndPoints
         {
             var command = new UpdateCompanyCategoryProductCommand(
                 productItemId,
-                request.CompanyCategoryProductItemName,
+                request.ProductCategoryName,
                 request.CategoryId,
                 request.Description,
                 request.IsActive,
@@ -69,7 +69,7 @@ public static class CompanyProductCategoryItemEndPoints
         .Produces(400);
 
         // Get All Company Category Products
-        app.MapGet("/company-category-products", async (bool isAllActive, IMediator mediator) =>
+        app.MapGet("/company-category-products/{isAllActive}", async (bool isAllActive, IMediator mediator) =>
         {
             var result = await mediator.Send(new GetCompanyCategoryProductsQuery(isAllActive));
             return Results.Ok(result);

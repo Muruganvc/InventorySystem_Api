@@ -6,5 +6,6 @@ public class Role
     public string RoleCode { get; set; } = default!;
     public bool IsActive { get; set; } = true;
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public uint RowVersion { get; }
 
 }

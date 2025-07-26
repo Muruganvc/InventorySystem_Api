@@ -40,5 +40,7 @@ public class MenuItemConfiguration : IEntityTypeConfiguration<MenuItem>
                .WithMany(m => m.Children)
                .HasForeignKey(m => m.ParentId)
                .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

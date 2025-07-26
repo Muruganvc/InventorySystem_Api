@@ -19,7 +19,7 @@ internal class UpdateCompanyCategoryProductCommandHandler : IRequestHandler<Upda
 
     public async Task<IResult<bool>> Handle(UpdateCompanyCategoryProductCommand request, CancellationToken cancellationToken)
     {
-        var productCategory = await _productCategoryRepository.GetByAsync(a => a.ProductCategoryId == request.CompanyCategoryProductItemId);
+        var productCategory = await _productCategoryRepository.GetByAsync(a => a.ProductCategoryId == request.ProductCategoryId);
         if (productCategory == null)
             return Result<bool>.Failure("Selected product category not found");
 
@@ -29,7 +29,7 @@ internal class UpdateCompanyCategoryProductCommandHandler : IRequestHandler<Upda
         var category = await _categoryRepository.GetByAsync(a => a.CategoryId == request.CategoryId);
         if (category == null) return Result<bool>.Failure("Selected category not found");
 
-        productCategory.Update(request.CompanyCategoryProductItemName, request.CategoryId, request.Description, request.IsActive, 1);
+        productCategory.Update(request.ProductCategoryName, request.CategoryId, request.Description, request.IsActive, 1);
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
             var affectedRows = await _unitOfWork.SaveAsync();

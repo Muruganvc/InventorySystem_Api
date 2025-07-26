@@ -1,5 +1,6 @@
 ﻿using InventorySystem_Api.Request;
 using InventorySystem_Application.Category.CreateCategoryCommand;
+using InventorySystem_Application.Category.GetCategoriesByCompanyQuery;
 using InventorySystem_Application.Category.GetCategoriesQuery;
 using InventorySystem_Application.Category.GetCategoryQuery;
 using InventorySystem_Application.Category.UpdateCategoryCommand;
@@ -75,6 +76,19 @@ public static class CategoryEndPoints
             return Results.Ok(result);
         })
         .WithName("GetCategories")
+        .WithOpenApi()
+        .Produces(200)
+        .Produces(400);
+
+        // Get Category By company Id
+        app.MapGet("/categories/company/{companyId}", async (
+            int companyId,
+            IMediator mediator) =>
+        {
+            var result = await mediator.Send(new GetCategoriesByCompanyQuery(companyId));
+            return Results.Ok(result);
+        })
+        .WithName("GetCategoryByCompany")
         .WithOpenApi()
         .Produces(200)
         .Produces(400);

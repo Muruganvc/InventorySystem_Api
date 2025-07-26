@@ -1,4 +1,4 @@
 ﻿namespace InventorySystem_Api.Request;
-public record CreateUserRequest(string FirstName, string? LastName,
-string UserName, string Password, string Email, string MobileNo);
+public record CreateUserRequest(string FirstName, string? LastName,int role,
+string UserName, string Email, string MobileNo);
 

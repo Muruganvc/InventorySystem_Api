@@ -42,5 +42,6 @@ public class UserMenuPermissionConfiguration : IEntityTypeConfiguration<UserMenu
             .WithMany(m => m.UserMenuPermissions)
             .HasForeignKey(x => x.MenuItemId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

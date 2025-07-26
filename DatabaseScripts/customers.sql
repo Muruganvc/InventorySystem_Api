@@ -1,0 +1,8 @@
+CREATE TABLE public.customers (
+    customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_name VARCHAR(200) NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -8,7 +8,7 @@ public record GetInventoryCompanyInfoQueryResponse(
     string GstNumber,
     string ApiVersion,
     string UiVersion,
-    string QrCodeBase64,
+    string? QrCodeBase64,
     string Email,
     string BankName,
     string BankBranchName,

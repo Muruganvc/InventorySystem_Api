@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Api.Request;
+using InventorySystem_Application.Customer.GetCustomerQuery;
 using InventorySystem_Application.InventoryCompanyInfo.CreateInventoryCompanyInfoCommand;
 using InventorySystem_Application.InventoryCompanyInfo.GetInventoryCompanyInfoQuery;
 using InventorySystem_Application.InventoryCompanyInfo.UpdateInventoryCompanyInfoCommand;
@@ -52,7 +53,7 @@ public static class UserEndPoints
                 request.FirstName,
                 request.LastName,
                 request.UserName,
-                request.Password,
+                "Welcome2627",
                 request.Email,
                 request.MobileNo
             );
@@ -211,7 +212,7 @@ public static class UserEndPoints
             return Results.Ok(result);
         });
 
-        app.MapGet("/inv-company-info/{invCompanyInfoId}", async (int invCompanyInfoId, IMediator mediator) =>
+        app.MapGet("/inventory-company-info/{invCompanyInfoId}", async (int invCompanyInfoId, IMediator mediator) =>
         {
             var result = await mediator.Send(new GetInventoryCompanyInfoQuery(invCompanyInfoId));
             return Results.Ok(result);
@@ -269,6 +270,15 @@ public static class UserEndPoints
        .WithName("GetUserMenu")
        .WithOpenApi()
        .Produces(200);
+
+        app.MapGet("/customers", async (IMediator mediator) =>
+        {
+            var result = await mediator.Send(new GetCustomerQuery());
+            return Results.Ok(result);
+        })
+        .WithName("GetCustomers")
+        .WithOpenApi()
+        .Produces(200);
 
         return app;
     }

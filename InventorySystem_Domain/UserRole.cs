@@ -7,7 +7,7 @@ public class UserRole
     // Navigation properties
     public User User { get; set; } = null!;
     public Role Role { get; set; } = null!;
-
+    public uint RowVersion { get; }
     public static UserRole AddRole(int UserId, int RoleId)
     {
         return new UserRole

@@ -24,7 +24,8 @@ internal sealed class GetCategoryQueryHandler : IRequestHandler<GetCategoryQuery
                c.CategoryId, c.CategoryName,
                c.Company.CompanyId,c.Company.CompanyName,
                c.Description,c.IsActive,c.RowVersion,
-               c.CreatedByUser.UserName
+               c.CreatedByUser.UserName,
+               c.CreatedAt
            ))
            .FirstOrDefaultAsync(cancellationToken);
 

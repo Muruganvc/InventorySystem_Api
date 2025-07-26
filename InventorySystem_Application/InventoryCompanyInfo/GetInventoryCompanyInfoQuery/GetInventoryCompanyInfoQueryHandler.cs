@@ -15,12 +15,15 @@ internal class GetInventoryCompanyInfoQueryHandler
     {
         _invCompanyInfoRepository = invCompanyInfoRepository;
     }
-    public async Task<IResult<GetInventoryCompanyInfoQueryResponse>> Handle(GetInventoryCompanyInfoQuery request, CancellationToken cancellationToken)
+    public async Task<IResult<GetInventoryCompanyInfoQueryResponse>> Handle(
+    GetInventoryCompanyInfoQuery request,
+    CancellationToken cancellationToken)
     {
-        var company = await _invCompanyInfoRepository.Table
+        var companyData = await _invCompanyInfoRepository.Table
             .AsNoTracking()
             .Where(c => c.InventoryCompanyInfoId == request.InventoryCompanyInfoId)
-            .Select(c => new GetInventoryCompanyInfoQueryResponse(
+            .Select(c => new
+            {
                 c.InventoryCompanyInfoId,
                 c.InventoryCompanyInfoName,
                 c.Description,
@@ -29,17 +32,37 @@ internal class GetInventoryCompanyInfoQueryHandler
                 c.GstNumber,
                 c.ApiVersion,
                 c.UiVersion,
-                $"data:image/jpeg;base64,{Convert.ToBase64String(c.QrCode)}",
+                c.QrCode,
                 c.Email,
                 c.BankName,
                 c.BankBranchName,
                 c.BankAccountNo,
                 c.BankBranchIFSC
-            ))
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return company is null
-            ? Result<GetInventoryCompanyInfoQueryResponse>.Failure("Company not found.")
-            : Result<GetInventoryCompanyInfoQueryResponse>.Success(company);
+        if (companyData == null)
+            return Result<GetInventoryCompanyInfoQueryResponse>.Failure("Company not found.");
+
+        var company = new GetInventoryCompanyInfoQueryResponse(
+            companyData.InventoryCompanyInfoId,
+            companyData.InventoryCompanyInfoName,
+            companyData.Description,
+            companyData.Address,
+            companyData.MobileNo,
+            companyData.GstNumber,
+            companyData.ApiVersion,
+            companyData.UiVersion,
+            companyData.QrCode != null
+                ? $"data:image/jpeg;base64,{Convert.ToBase64String(companyData.QrCode)}"
+                : null,
+            companyData.Email,
+            companyData.BankName,
+            companyData.BankBranchName,
+            companyData.BankAccountNo,
+            companyData.BankBranchIFSC
+        );
+
+        return Result<GetInventoryCompanyInfoQueryResponse>.Success(company);
     }
 }

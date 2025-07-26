@@ -6,7 +6,7 @@ public class ProductCategory
     public string ProductCategoryName { get; private set; } = default!;
     public int CategoryId { get; private set; }
     public string? Description { get; private set; }
-    public bool IsActive { get; private set; } = true;
+    public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public int CreatedBy { get; private set; }
     public DateTime ModifiedAt { get; private set; }

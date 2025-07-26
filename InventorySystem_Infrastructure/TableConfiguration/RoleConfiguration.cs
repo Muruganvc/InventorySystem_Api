@@ -32,5 +32,8 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
                .HasColumnName("is_active")
                .IsRequired()
                .HasDefaultValue(true);
+
+        builder.Property(c => c.RowVersion).IsRowVersion();
+
     }
 }

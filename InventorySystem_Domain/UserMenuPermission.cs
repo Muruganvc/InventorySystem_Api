@@ -10,6 +10,7 @@ public class UserMenuPermission
     // Navigation Properties
     public User User { get; set; } = null!;
     public MenuItem MenuItem { get; set; } = null!;
+    public uint RowVersion { get; }
 
     public static UserMenuPermission AddUserMenu(int userId, int menuId, int orderBy)
     {

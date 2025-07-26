@@ -15,7 +15,7 @@ public static class ProductEndPoints
     public static IEndpointRouteBuilder MapProductEndpoints(this IEndpointRouteBuilder app)
     {
         // Create Product
-        app.MapPost("/products", async (
+        app.MapPost("/product", async (
             [FromBody] CreateProductRequest request,
             IMediator mediator) =>
         {
@@ -32,7 +32,7 @@ public static class ProductEndPoints
         .Produces(400);
 
         // Update Product
-        app.MapPut("/products/{productId}", async (
+        app.MapPut("/product/{productId}", async (
             int productId,
             [FromBody] UpdateProductRequest request,
             IMediator mediator) =>
@@ -63,9 +63,9 @@ public static class ProductEndPoints
         .Produces(400);
 
         // Get All Products
-        app.MapGet("/products", async (IMediator mediator) =>
+        app.MapGet("/products/{type}", async (string type,IMediator mediator) =>
         {
-            var result = await mediator.Send(new GetProductsQuery());
+            var result = await mediator.Send(new GetProductsQuery(type));
             return Results.Ok(result);
         })
         .WithName("GetProducts")
@@ -74,7 +74,7 @@ public static class ProductEndPoints
         .Produces(400);
 
         // Update Product Quantity
-        app.MapPut("/products/{productId}/quantity", async (
+        app.MapPut("/product/{productId}/quantity", async (
             int productId,
             [FromBody] UpdateProductQuantityRequest request,
             IMediator mediator) =>

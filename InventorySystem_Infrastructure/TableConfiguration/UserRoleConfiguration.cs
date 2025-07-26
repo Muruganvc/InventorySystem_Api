@@ -27,5 +27,7 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
                .WithMany(r => r.UserRoles)
                .HasForeignKey(ur => ur.RoleId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }
