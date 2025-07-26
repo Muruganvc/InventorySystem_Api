@@ -1,4 +1,5 @@
-﻿using InventorySystem_Application.Dashboard.GetCompanyWiseIncomeQuery;
+﻿using InventorySystem_Application.Dashboard.GetAuditQuery;
+using InventorySystem_Application.Dashboard.GetCompanyWiseIncomeQuery;
 using InventorySystem_Application.Dashboard.GetIncomeOrOutcomeSummaryReportQuery;
 using InventorySystem_Application.Dashboard.GetProductQuantityQuery;
 using InventorySystem_Application.Dashboard.GetTotalProductQuery;
@@ -51,7 +52,8 @@ public static class DashboardEndpoints
 
         app.MapGet("/audit-log", async (IMediator mediator) =>
         {
-            return Results.Ok("");
+            var result = await mediator.Send(new GetAuditQuery());
+            return Results.Ok(result);
         }).WithName("GetAuditlog")
         .WithOpenApi()
         .Produces(200);

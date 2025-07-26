@@ -10,7 +10,7 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args); 
+var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 var jwtSection = config.GetSection("JwtSettings");
 builder.Services.AddDbContext<InventorySystemDbContext>(options =>
@@ -18,7 +18,7 @@ builder.Services.AddDbContext<InventorySystemDbContext>(options =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
- 
+
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MappingProfile>();
@@ -32,7 +32,7 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblies(assemblies);
 });
- 
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -68,8 +68,29 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
-{
+{ 
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Inventory System API",
+        Description = "API documentation for Inventory Management System",
+        //Contact = new OpenApiContact
+        //{
+        //    Name = "Company Support",
+        //    Email = "vcmuruganmca@gmail.com",
+        //    Url = new Uri("https://www.facebook.com/vcmuruganmca")
+        //} 
+    });
+
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -77,7 +98,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter your JWT token like this: Bearer {your token}"
+        Description = "Enter your JWT token in the format: **Bearer &lt;your_token&gt;**"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -85,15 +106,25 @@ builder.Services.AddSwaggerGen(options =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
             },
             Array.Empty<string>()
         }
     });
+    options.TagActionsBy(api =>
+    {
+        return new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default" };
+    });
+    options.DocInclusionPredicate((_, api) => true);
 });
- 
+
+
 var app = builder.Build();
- 
+
 app.UseGlobalExceptionHandler();
 
 app.UseAuthentication();
@@ -113,6 +144,7 @@ app.MapUserEndpoints()
    .MapCategoryEndpoints()
    .MapCompanyCategoryProductEndpoints()
    .MapProductEndpoints()
-   .MapDashboardEndpoints();
+   .MapDashboardEndpoints()
+   .MapOrderEndpoints();
 
 app.Run();

@@ -1,0 +1,20 @@
+﻿namespace InventorySystem_Application.Order.GetOrdersummaryQuery;
+
+public record GetOrdersummaryQueryResponse(int ProductId,
+    string FullProductName,
+    int Quantity,
+    decimal UnitPrice,
+    decimal DiscountPercent,
+    decimal DiscountAmount,
+    decimal SubTotal,
+    decimal NetTotal,
+    DateTime OrderDate,
+    decimal FinalAmount,
+    decimal TotalAmount,
+    decimal BalanceAmount,
+    string CustomerName,
+    string? Address,
+    string Phone,
+    string User,
+    string? SerialNo,
+    bool IsGst);
