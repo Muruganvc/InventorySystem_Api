@@ -9,11 +9,14 @@ namespace InventorySystem_Application.Product.SetActiveInactiveCommand
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+        private readonly IUserInfo _userInfo;
         public SetActiveInactiveCommandHandler(IUnitOfWork unitOfWork,
-            IRepository<InventorySystem_Domain.Product> productRepository)
+            IRepository<InventorySystem_Domain.Product> productRepository,
+            IUserInfo userInfo)
         {
             _unitOfWork = unitOfWork;
             _productRepository = productRepository;
+            _userInfo = userInfo;
         }
         public async Task<IResult<bool>> Handle(SetActiveInactiveCommand request, CancellationToken cancellationToken)
         {
@@ -25,7 +28,7 @@ namespace InventorySystem_Application.Product.SetActiveInactiveCommand
                 return Result<bool>.Failure("The product item has been modified by another user. Please reload and try again.");
 
 
-            product.SetActiveInactive(1);
+            product.SetActiveInactive(_userInfo.UserId);
             var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
             {
                 var affectedRows = await _unitOfWork.SaveAsync();

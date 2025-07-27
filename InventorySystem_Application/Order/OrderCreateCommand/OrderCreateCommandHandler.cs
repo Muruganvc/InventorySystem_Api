@@ -9,11 +9,14 @@ internal sealed class OrderCreateCommandHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+    private readonly IUserInfo _userInfo;
     public OrderCreateCommandHandler(IUnitOfWork unitOfWork,
-        IRepository<InventorySystem_Domain.Product> productRepository)
+        IRepository<InventorySystem_Domain.Product> productRepository,
+        IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _productRepository = productRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<int>> Handle(OrderCreateCommand request, CancellationToken cancellationToken)
     {
@@ -59,7 +62,7 @@ internal sealed class OrderCreateCommandHandler
                 UnitPrice = item.UnitPrice,
                 DiscountPercent = item.DiscountPercent,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = 1,
+                CreatedBy = _userInfo.UserId,
                 SerialNo = item.SerialNo
             }).ToList();
 

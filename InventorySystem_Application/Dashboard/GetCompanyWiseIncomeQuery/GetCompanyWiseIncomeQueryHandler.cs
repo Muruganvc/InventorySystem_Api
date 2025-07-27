@@ -25,22 +25,23 @@ internal sealed class GetCompanyWiseIncomeQueryHandler
     public async Task<IResult<IReadOnlyList<GetCompanyWiseIncomeQueryResponse>>> Handle(GetCompanyWiseIncomeQuery request, CancellationToken cancellationToken)
     {
         var result = await _orderItemRepository.Table
+            .AsNoTracking()
                  .Where(ord =>
                  ord.CreatedAt.Month == DateTime.Now.AddMonths(-1).Month &&
                  ord.CreatedAt.Year == DateTime.Now.Year)
-         .Join(_productRepository.Table,
+         .Join(_productRepository.Table.AsNoTracking(),
                  ord => ord.ProductId,
                  pro => pro.ProductId,
                  (ord, pro) => new { ord, pro })
-         .Join(_categoryRepository.Table,
+         .Join(_categoryRepository.Table.AsNoTracking(),
                  op => op.pro.ProductCategoryId,
                  cat => cat.CategoryId,
                  (op, cat) => new { op.ord, op.pro, cat })
-         .Join(_productCategoryRepository.Table,
+         .Join(_productCategoryRepository.Table.AsNoTracking(),
                  opc => opc.pro.ProductCategoryId,
                  pcat => pcat.ProductCategoryId,
                  (opc, pcat) => new { opc.ord, opc.pro, opc.cat, pcat })
-         .Join(_companyRepository.Table,
+         .Join(_companyRepository.Table.AsNoTracking(),
                  oppc => oppc.cat.CompanyId,
                  com => com.CompanyId,
                  (oppc, com) => new

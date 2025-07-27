@@ -32,24 +32,24 @@ internal sealed class GetOrdersummaryQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetOrdersummaryQueryResponse>>> Handle(GetOrdersummaryQuery request, CancellationToken cancellationToken)
     {
-        var resultList = await _orderItemRepository.Table
-            .Join(_productRepository.Table,
+        var resultList = await _orderItemRepository.Table.AsNoTracking()
+            .Join(_productRepository.Table.AsNoTracking(),
                 odIm => odIm.ProductId,
                 pro => pro.ProductId,
                 (odIm, pro) => new { odIm, pro })
-            .Join(_categoryRepository.Table,
+            .Join(_categoryRepository.Table.AsNoTracking(),
                 temp => temp.pro.ProductCategoryId,
                 cat => cat.CategoryId,
                 (temp, cat) => new { temp.odIm, temp.pro, cat })
-            .Join(_companyRepository.Table,
+            .Join(_companyRepository.Table.AsNoTracking(),
                 temp => temp.cat.CompanyId,
                 com => com.CompanyId,
                 (temp, com) => new { temp.odIm, temp.pro, temp.cat, com })
-            .Join(_orderRepository.Table.Where(ord => ord.OrderId == request.OrderId),
+            .Join(_orderRepository.Table.AsNoTracking().Where(ord => ord.OrderId == request.OrderId),
                 temp => temp.odIm.OrderId,
                 odr => odr.OrderId,
                 (temp, odr) => new { temp.odIm, temp.pro, temp.cat, temp.com, odr })
-            .Join(_customerRepository.Table,
+            .Join(_customerRepository.Table.AsNoTracking(),
                 temp => temp.odr.CustomerId,
                 cus => cus.CustomerId,
                 (temp, cus) => new GetOrdersummaryQueryResponse(

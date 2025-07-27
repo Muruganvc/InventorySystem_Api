@@ -1,5 +1,6 @@
 ﻿using InventorySystem_Api.Common;
 using InventorySystem_Api.Endpoints;
+using InventorySystem_Application.Common;
 using InventorySystem_Application.Common.Mapper;
 using InventorySystem_Domain.Common;
 using InventorySystem_Infrastructure;
@@ -17,6 +18,8 @@ builder.Services.AddDbContext<InventorySystemDbContext>(options =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserInfo, UserInfo>();
 
 builder.Services.AddAutoMapper(cfg =>
 {

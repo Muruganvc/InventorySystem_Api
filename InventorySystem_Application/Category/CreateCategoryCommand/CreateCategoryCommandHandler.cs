@@ -9,12 +9,16 @@ internal sealed class CreateCategoryCommandHandler : IRequestHandler<CreateCateg
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Company> _companyRepository;
     private readonly IRepository<InventorySystem_Domain.Category> _categoryRepository;
+    private readonly IUserInfo _userInfo;
     public CreateCategoryCommandHandler(IUnitOfWork unitOfWork,
-        IRepository<InventorySystem_Domain.Company> companyRepository, IRepository<InventorySystem_Domain.Category> categoryRepository)
+        IRepository<InventorySystem_Domain.Company> companyRepository, 
+        IRepository<InventorySystem_Domain.Category> categoryRepository,
+        IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _companyRepository = companyRepository;
         _categoryRepository = categoryRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<int>> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
@@ -26,7 +30,7 @@ internal sealed class CreateCategoryCommandHandler : IRequestHandler<CreateCateg
         if (isExistsCategory != null)
             return Result<int>.Failure($"A category named '{request.CategoryName}' already exists for the selected company.");
 
-        var category = InventorySystem_Domain.Category.Create(request.CategoryName, request.CompanyId, 1, request.Description, request.IsActive);
+        var category = InventorySystem_Domain.Category.Create(request.CategoryName, request.CompanyId, _userInfo.UserId, request.Description, request.IsActive);
 
         var categoryId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

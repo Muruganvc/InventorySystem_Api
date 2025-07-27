@@ -18,12 +18,12 @@ internal sealed class GetIncomeOrOutcomeSummaryReportQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetIncomeOrOutcomeSummaryReportQueryResponse>>> Handle(GetIncomeOrOutcomeSummaryReportQuery request, CancellationToken cancellationToken)
     {
-        var result = await _orderItemRepository.Table
+        var result = await _orderItemRepository.Table.AsNoTracking()
              .Where(ord =>
                  !request.FromDate.HasValue || !request.EndDate.HasValue ||
                  (ord.CreatedAt >= request.FromDate && ord.CreatedAt <= request.EndDate)
              )
-             .Join(_productRepository.Table,
+             .Join(_productRepository.Table.AsNoTracking(),
                  ord => ord.ProductId,
                  p => p.ProductId,
                  (ord, p) => new { Order = ord, Product = p }

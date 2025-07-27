@@ -5,7 +5,7 @@ public class MenuItem
     public int MenuItemId { get; set; }
     public string Label { get; set; } = null!;
     public string? Icon { get; set; }
-    public string? Route { get; set; }
+    public string Route { get; set; } = null!;
     public int? ParentId { get; set; }
     public int? OrderBy { get; set; }
     public uint RowVersion { get; }

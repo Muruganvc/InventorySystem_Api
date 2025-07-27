@@ -10,11 +10,13 @@ internal sealed class ActiveOrInActiveUserCommandHandler
 {
     private readonly IRepository<User> _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserInfo _userInfo;
 
-    public ActiveOrInActiveUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork)
+    public ActiveOrInActiveUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork, IUserInfo userInfo)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _userInfo = userInfo;
     }
     public async Task<IResult<bool>> Handle(ActiveOrInActiveUserCommand request, CancellationToken cancellationToken)
     {
@@ -22,7 +24,7 @@ internal sealed class ActiveOrInActiveUserCommandHandler
         if (user == null)
             return Result<bool>.Failure("User details not found");
 
-        user.SetActiveStatus(request.IsActive, 1);
+        user.SetActiveStatus(request.IsActive, _userInfo.UserId);
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
             var affectedRows = await _unitOfWork.SaveAsync();

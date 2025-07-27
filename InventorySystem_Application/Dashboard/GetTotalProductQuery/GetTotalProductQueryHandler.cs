@@ -29,8 +29,8 @@ internal sealed class GetTotalProductQueryHandler
     public async Task<IResult<GetTotalProductQueryResponse>> Handle(GetTotalProductQuery request, CancellationToken cancellationToken)
     {
         // Calculate total quantity and net total from order items
-        var orderItems = await _orderItemRepository.Table
-            .Join(_productRepository.Table,
+        var orderItems = await _orderItemRepository.Table.AsNoTracking()
+            .Join(_productRepository.Table.AsNoTracking(),
                 orderItem => orderItem.ProductId,
                 product => product.ProductId,
                 (orderItem, product) => new

@@ -9,11 +9,14 @@ internal sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProduc
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+    private readonly IUserInfo _userInfo;
     public UpdateProductCommandHandler(IUnitOfWork unitOfWork,
-        IRepository<InventorySystem_Domain.Product> productRepository)
+        IRepository<InventorySystem_Domain.Product> productRepository,
+        IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _productRepository = productRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<bool>> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
@@ -26,7 +29,7 @@ internal sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProduc
 
 
         product.Update(request.ProductName, request.ProductCategoryId, request.Description, request.Mrp, request.SalesPrice, request.Quantity,
-            request.LandingPrice, request.IsActive, 1);
+            request.LandingPrice, request.IsActive, _userInfo.UserId);
      
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {

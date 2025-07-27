@@ -15,7 +15,7 @@ internal sealed class GetAuditQueryHandler
 
     public async Task<IResult<IReadOnlyList<GetAuditQueryResponse>>> Handle(GetAuditQuery request, CancellationToken cancellationToken)
     {
-        var auditLogs = await _auditRepository.Table.ToListAsync(cancellationToken);
+        var auditLogs = await _auditRepository.Table.AsNoTracking().ToListAsync(cancellationToken);
 
         var response = auditLogs.Select(a => new GetAuditQueryResponse(
             a.AuditLogId,

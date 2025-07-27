@@ -9,11 +9,13 @@ internal sealed class CreateUserCommandHandler :
 {
     private readonly IRepository<User> _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserInfo _userInfo;
 
-    public CreateUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork)
+    public CreateUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork, IUserInfo userInfo)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _userInfo = userInfo;
     }
     public async Task<IResult<int>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
@@ -23,7 +25,7 @@ internal sealed class CreateUserCommandHandler :
 
         var user = User.Create(request.FirstName, request.LastName, request.UserName, 
             BCrypt.Net.BCrypt.HashPassword(request.Password),
-            request.Email, request.MobileNo, 1);
+            request.Email, request.MobileNo, _userInfo.UserId);
 
         var userId = await _unitOfWork.ExecuteInTransactionAsync<int>(async () =>
         {

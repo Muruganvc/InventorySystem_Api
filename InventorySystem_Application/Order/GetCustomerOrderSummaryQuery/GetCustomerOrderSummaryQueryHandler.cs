@@ -18,9 +18,9 @@ internal record class GetCustomerOrderSummaryQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetCustomerOrderSummaryQueryResponse>>> Handle(GetCustomerOrderSummaryQuery request, CancellationToken cancellationToken)
     {
-        var result = await _orderRepository.Table
+        var result = await _orderRepository.Table.AsNoTracking()
             .Join(
-                _customerRepository.Table,
+                _customerRepository.Table.AsNoTracking(),
                 ord => ord.CustomerId,
                 cus => cus.CustomerId,
                 (ord, cus) => new GetCustomerOrderSummaryQueryResponse(

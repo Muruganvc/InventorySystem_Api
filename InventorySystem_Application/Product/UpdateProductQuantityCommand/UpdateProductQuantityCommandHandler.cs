@@ -8,11 +8,14 @@ internal sealed class UpdateProductQuantityCommandHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+    private readonly IUserInfo _userInfo;
     public UpdateProductQuantityCommandHandler(IUnitOfWork unitOfWork,
-        IRepository<InventorySystem_Domain.Product> productRepository)
+        IRepository<InventorySystem_Domain.Product> productRepository,
+        IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _productRepository = productRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<bool>> Handle(UpdateProductQuantityCommand request, CancellationToken cancellationToken)
     {
@@ -23,7 +26,7 @@ internal sealed class UpdateProductQuantityCommandHandler
         if (product.RowVersion != request.RowVersion)
             return Result<bool>.Failure("The product item has been modified by another user. Please reload and try again.");
 
-        product.QuantityUpdate(request.Quantity, 1);
+        product.QuantityUpdate(request.Quantity, _userInfo.UserId);
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
             var affectedRows = await _unitOfWork.SaveAsync();

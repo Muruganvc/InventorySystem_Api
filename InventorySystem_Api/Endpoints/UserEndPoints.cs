@@ -4,11 +4,13 @@ using InventorySystem_Application.InventoryCompanyInfo.CreateInventoryCompanyInf
 using InventorySystem_Application.InventoryCompanyInfo.GetInventoryCompanyInfoQuery;
 using InventorySystem_Application.InventoryCompanyInfo.UpdateInventoryCompanyInfoCommand;
 using InventorySystem_Application.MenuItem.AddOrRemoveUserMenuItemCommand;
+using InventorySystem_Application.MenuItem.GetMenusQuery;
 using InventorySystem_Application.MenuItem.GetUserMenuQuery;
 using InventorySystem_Application.Users.ActiveOrInActiveUserCommand;
 using InventorySystem_Application.Users.AddOrRemoveUserRoleCommand;
 using InventorySystem_Application.Users.CreateUserCommand;
 using InventorySystem_Application.Users.ForgetPasswordCommand;
+using InventorySystem_Application.Users.GetAllRoles;
 using InventorySystem_Application.Users.GetUserQuery;
 using InventorySystem_Application.Users.GetUsersQuery;
 using InventorySystem_Application.Users.LoginCommand;
@@ -237,10 +239,10 @@ public static class UserEndPoints
             .Produces(400);
 
         app.MapPut("/forget-password/{userId}/mobile/{mobileNo}", async (
-        int userId,string mobileNo,
+        int userId, string mobileNo,
         IMediator mediator) =>
         {
-            var command = new ForgetPasswordCommand(userId,mobileNo,"");
+            var command = new ForgetPasswordCommand(userId, mobileNo, "");
             var result = await mediator.Send(command);
             return Results.Ok(result);
         })
@@ -280,6 +282,21 @@ public static class UserEndPoints
         .WithOpenApi()
         .Produces(200);
 
+        app.MapGet("/roles", async (IMediator mediator) =>
+        {
+            var result = await mediator.Send(new GetRolesQuery());
+            return Results.Ok(result);
+        }).WithName("GetAllRoles")
+          .WithOpenApi()
+          .Produces(200);
+
+        app.MapGet("/menus", async (IMediator mediator) =>
+        {
+            var result = await mediator.Send(new GetMenusQuery());
+            return Results.Ok(result);
+        }).WithName("GetAllMenus")
+        .WithOpenApi()
+        .Produces(200);
         return app;
     }
 }

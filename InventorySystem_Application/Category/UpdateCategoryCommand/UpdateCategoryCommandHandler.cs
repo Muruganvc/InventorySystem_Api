@@ -10,13 +10,14 @@ internal sealed class UpdateCategoryCommandHandler : IRequestHandler<UpdateCateg
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Company> _companyRepository;
     private readonly IRepository<InventorySystem_Domain.Category> _categoryRepository;
-
+    private readonly IUserInfo _userInfo;
     public UpdateCategoryCommandHandler(IUnitOfWork unitOfWork, IRepository<InventorySystem_Domain.Company> companyRepository,
-        IRepository<InventorySystem_Domain.Category> categoryRepository)
+        IRepository<InventorySystem_Domain.Category> categoryRepository, IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _companyRepository = companyRepository;
         _categoryRepository = categoryRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<bool>> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
     {
@@ -36,7 +37,7 @@ internal sealed class UpdateCategoryCommandHandler : IRequestHandler<UpdateCateg
             companyId: request.CompanyId,
             description: request.Description,
             isActive: request.IsActive,
-            modifiedBy: 1
+            modifiedBy: _userInfo.UserId
         );
 
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>

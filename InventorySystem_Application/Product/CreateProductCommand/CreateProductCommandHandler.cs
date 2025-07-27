@@ -8,11 +8,14 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+    private readonly IUserInfo _userInfo;
     public CreateProductCommandHandler(IUnitOfWork unitOfWork,
-        IRepository<InventorySystem_Domain.Product> productRepository)
+        IRepository<InventorySystem_Domain.Product> productRepository,
+        IUserInfo userInfo)
     {
         _unitOfWork = unitOfWork;
         _productRepository = productRepository;
+        _userInfo = userInfo;
     }
     public async Task<IResult<int>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
@@ -22,7 +25,7 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
             return Result<int>.Failure("Selected product name already exists.");
 
         var product = InventorySystem_Domain.Product.Create(request.ProductName, request.ProductCategoryId, request.Description,
-            request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, 1);
+            request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, _userInfo.UserId);
 
         var productIId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

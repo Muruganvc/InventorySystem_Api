@@ -19,9 +19,9 @@ internal sealed class GetUserMenuQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetMenuItemQueryResponse>>> Handle(GetUserMenuQuery request, CancellationToken cancellationToken)
     {
-        var menuItems = await _menuItemRepository.Table
+        var menuItems = await _menuItemRepository.Table.AsNoTracking()
             .Join(
-                _userMenuPermissionRepository.Table,
+                _userMenuPermissionRepository.Table.AsNoTracking(),
                 menu => menu.MenuItemId,
                 perm => perm.MenuItemId,
                 (menu, perm) => new { menu, perm }

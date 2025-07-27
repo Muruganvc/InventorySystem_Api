@@ -25,16 +25,16 @@ internal sealed class GetProductQuantityQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetProductQuantityQueryResponse>>> Handle(GetProductQuantityQuery request, CancellationToken cancellationToken)
     {
-        var result = await _companyRepository.Table
+        var result = await _companyRepository.Table.AsNoTracking()
                  .Join(_categoryRepository.Table,
                        company => company.CompanyId,
                        category => category.CompanyId,
                        (company, category) => new { company, category })
-                 .Join(_productCategoryRepository.Table,
+                 .Join(_productCategoryRepository.Table.AsNoTracking(),
                        x => x.category.CategoryId,
                        productCategory => productCategory.CategoryId,
                        (x, productCategory) => new { x.company, x.category, productCategory })
-                 .Join(_productRepository.Table,
+                 .Join(_productRepository.Table.AsNoTracking(),
                        x => x.productCategory.ProductCategoryId,
                        product => product.ProductCategoryId,
                        (x, product) => new GetProductQuantityQueryResponse(

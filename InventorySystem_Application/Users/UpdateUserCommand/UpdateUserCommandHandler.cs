@@ -9,11 +9,12 @@ internal sealed class UpdateUserCommandHandler
 {
     private readonly IRepository<User> _userRepository;
     private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork)
+    private readonly IUserInfo _userInfo;
+    public UpdateUserCommandHandler(IRepository<User> userRepository, IUnitOfWork unitOfWork, IUserInfo userInfo)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _userInfo = userInfo;
     }
     public async Task<IResult<bool>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
@@ -21,7 +22,7 @@ internal sealed class UpdateUserCommandHandler
         if (user == null)
             return Result<bool>.Failure("User details not found");
 
-        user.Update(request.FirstName, request.LastName, request.Email, request.MobileNo, request.ImageData, 1);
+        user.Update(request.FirstName, request.LastName, request.Email, request.MobileNo, request.ImageData, _userInfo.UserId);
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
             var affectedRows = await _unitOfWork.SaveAsync();
