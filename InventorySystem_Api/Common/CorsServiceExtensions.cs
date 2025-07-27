@@ -31,13 +31,13 @@ public static class CorsServiceExtensions
             });
         });
     }
-    public static IServiceCollection AddCustomCors(this IServiceCollection services, string url)
+    public static IServiceCollection AddCustomCors(this IServiceCollection services, string origin)
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowCors", policy =>
+            options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins(url)
+                policy.WithOrigins(origin)
                       .AllowAnyHeader()
                       .AllowAnyMethod();
             });

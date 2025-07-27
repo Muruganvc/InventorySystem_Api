@@ -62,7 +62,7 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddCustomCors("https://inventorysystem-ui.onrender.com");
+    builder.Services.AddCustomCors("https://muruganvc.github.io");
 }
 
 builder.Services.AddEndpointsApiExplorer();
@@ -75,7 +75,7 @@ app.UseGlobalExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowCors");
+app.UseCors("AllowFrontend");
 
 app.UseSwagger();
 app.UseSwaggerUI();
