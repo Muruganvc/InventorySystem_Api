@@ -6,7 +6,6 @@ using InventorySystem_Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 
@@ -57,71 +56,18 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SUPERADMIN"));
 });
 
-builder.Services.AddCors(options =>
+if (builder.Environment.IsDevelopment())
 {
-    options.AddPolicy("AllowCors", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+    builder.Services.AddCustomCors("http://localhost:4200");
+}
+else
+{
+    builder.Services.AddCustomCors("https://inventorysystem-ui.onrender.com");
+}
 
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddSwaggerGen(options =>
-{ 
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Version = "v1",
-        Title = "Inventory System API",
-        Description = "API documentation for Inventory Management System",
-        //Contact = new OpenApiContact
-        //{
-        //    Name = "Company Support",
-        //    Email = "vcmuruganmca@gmail.com",
-        //    Url = new Uri("https://www.facebook.com/vcmuruganmca")
-        //} 
-    });
-
-    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your JWT token in the format: **Bearer &lt;your_token&gt;**"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-    options.TagActionsBy(api =>
-    {
-        return new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default" };
-    });
-    options.DocInclusionPredicate((_, api) => true);
-});
-
+builder.Services.AddCustomSwagger();
 
 var app = builder.Build();
 
@@ -130,6 +76,7 @@ app.UseGlobalExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors("AllowCors");
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
