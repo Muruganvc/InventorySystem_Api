@@ -1,6 +1,7 @@
 ﻿using InventorySystem_Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace InventorySystem_Infrastructure.TableConfiguration;
 
@@ -20,13 +21,29 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(o => o.Quantity).HasColumnName("quantity").IsRequired();
         builder.Property(o => o.UnitPrice).HasColumnName("unit_price").HasColumnType("numeric(18,2)");
         builder.Property(o => o.DiscountPercent).HasColumnName("discount_percent").HasDefaultValue(0);
-        builder.Property(o => o.SubTotal).HasColumnName("sub_total");
-        builder.Property(o => o.DiscountAmount).HasColumnName("discount_amount");
-        builder.Property(o => o.NetTotal).HasColumnName("net_total");
+
+        // ✅ Computed columns (PostgreSQL must have these defined as GENERATED ALWAYS)
+        builder.Property(o => o.SubTotal)
+            .HasColumnName("sub_total")
+            .HasComputedColumnSql("quantity * unit_price", stored: true)
+            .ValueGeneratedOnAddOrUpdate()
+            .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
+        builder.Property(o => o.DiscountAmount)
+            .HasColumnName("discount_amount")
+            .HasComputedColumnSql("quantity * unit_price * (discount_percent / 100.0)", stored: true)
+            .ValueGeneratedOnAddOrUpdate()
+            .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
+        builder.Property(o => o.NetTotal)
+            .HasColumnName("net_total")
+            .HasComputedColumnSql("quantity * unit_price * (1 - discount_percent / 100.0)", stored: true)
+            .ValueGeneratedOnAddOrUpdate()
+            .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
         builder.Property(o => o.CreatedAt)
-               .HasColumnName("created_at")
-               .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            .HasColumnName("created_at")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(o => o.CreatedBy).HasColumnName("created_by");
 

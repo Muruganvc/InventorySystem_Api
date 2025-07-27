@@ -8,7 +8,7 @@ public class OrderItem
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal DiscountPercent { get; set; }
-    public decimal SubTotal { get; private set; }
+    public decimal SubTotal { get; private set; } = 0;
     public decimal DiscountAmount { get; private set; }
     public decimal NetTotal { get; private set; }
     public DateTime CreatedAt { get; set; }
