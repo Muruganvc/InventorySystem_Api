@@ -13,4 +13,5 @@ public record GetInventoryCompanyInfoQueryResponse(
     string BankName,
     string BankBranchName,
     string BankAccountNo,
-    string BankBranchIFSC);
+    string BankBranchIFSC,
+    bool IsActive);

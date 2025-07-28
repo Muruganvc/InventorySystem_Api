@@ -80,7 +80,8 @@ internal sealed class LoginCommandHandler
                 BankName: companyInfo.BankName,
                 BankBranchName: companyInfo.BankBranchName,
                 BankAccountNo: companyInfo.BankAccountNo,
-                BankBranchIFSC: companyInfo.BankBranchIFSC
+                BankBranchIFSC: companyInfo.BankBranchIFSC,
+                IsActive:companyInfo.IsActive
             );
         }
 
@@ -100,9 +101,9 @@ internal sealed class LoginCommandHandler
     {
         var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+                new(ClaimTypes.Name, username),
+                new(ClaimTypes.Email, email),
+                new(ClaimTypes.NameIdentifier, userId.ToString())
             };
         foreach (var role in roleNames)
         {

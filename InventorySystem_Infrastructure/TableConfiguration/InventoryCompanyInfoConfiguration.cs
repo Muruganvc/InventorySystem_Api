@@ -79,6 +79,10 @@ public class InventoryCompanyInfoConfiguration : IEntityTypeConfiguration<Invent
                .HasColumnName("qr_code")
                .IsRequired(false);
 
+        builder.Property(c => c.IsActive)
+       .HasColumnName("is_active")
+       .HasDefaultValue(false);
+
         builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

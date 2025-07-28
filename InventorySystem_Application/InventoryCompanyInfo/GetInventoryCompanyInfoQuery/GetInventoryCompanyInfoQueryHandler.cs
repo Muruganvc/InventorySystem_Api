@@ -37,7 +37,8 @@ internal class GetInventoryCompanyInfoQueryHandler
                 c.BankName,
                 c.BankBranchName,
                 c.BankAccountNo,
-                c.BankBranchIFSC
+                c.BankBranchIFSC,
+                c.IsActive
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -60,7 +61,8 @@ internal class GetInventoryCompanyInfoQueryHandler
             companyData.BankName,
             companyData.BankBranchName,
             companyData.BankAccountNo,
-            companyData.BankBranchIFSC
+            companyData.BankBranchIFSC,
+            companyData.IsActive
         );
 
         return Result<GetInventoryCompanyInfoQueryResponse>.Success(company);

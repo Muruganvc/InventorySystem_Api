@@ -16,6 +16,8 @@ public class InventoryCompanyInfo
     public string UiVersion { get; set; } = null!;
     public byte[]? QrCode { get; set; }
     public uint RowVersion { get; }
+
+    public bool IsActive { get; set; }
     public static InventoryCompanyInfo Create(string inventoryCompanyInfoName,
         string description, string address, string mobileNo, string email, string gstNumber, string bankName,
         string bankBranchName, string bankAccountNo, string bankBranchIFSC, string apiVersion, string uiVersion,
