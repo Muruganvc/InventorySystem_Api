@@ -27,12 +27,18 @@ public static class CompanyEndpoints
             return Results.Ok(result);
         })
         .WithName("CreateCompany")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Create a new company";
+            operation.Description = "Creates a new company with the specified name, description, and active status.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
 
         // PUT: Update Company
-        app.MapPut("/companies/{companyId}", async (
+        app.MapPut("/companies/{companyId:int}", async (
             int companyId,
             [FromBody] UpdateCompanyRequest request,
             IMediator mediator) =>
@@ -49,12 +55,18 @@ public static class CompanyEndpoints
             return Results.Ok(result);
         })
         .WithName("UpdateCompany")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Update company details";
+            operation.Description = "Updates the company with the given ID using the provided data.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
 
         // GET: Get Company by ID
-        app.MapGet("/companies/{companyId}", async (
+        app.MapGet("/companies/{companyId:int}", async (
             int companyId,
             IMediator mediator) =>
         {
@@ -62,20 +74,34 @@ public static class CompanyEndpoints
             return Results.Ok(result);
         })
         .WithName("GetCompanyById")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get a company by ID";
+            operation.Description = "Returns company details for the specified ID.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // GET: Get All Companies
-        app.MapGet("/companies", async (bool isAllActiveCompany,IMediator mediator) =>
+
+        // GET: Get All Companies (optionally filter by active status)
+        app.MapGet("/companies", async (
+            [FromQuery] bool isAllActiveCompany,
+            IMediator mediator) =>
         {
             var result = await mediator.Send(new GetCompaniesQuery(isAllActiveCompany));
             return Results.Ok(result);
         })
         .WithName("GetCompanies")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get all companies";
+            operation.Description = "Returns a list of companies, filtered by active status if specified.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
 
         return app;
     }

@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Api.Request;
+using InventorySystem_Application.Common;
 using InventorySystem_Application.Order.GetCustomerOrderSummaryQuery;
 using InventorySystem_Application.Order.GetOrdersummaryQuery;
 using InventorySystem_Application.Order.OrderCreateCommand;
@@ -11,10 +12,8 @@ public static class OrderEndPoints
 {
     public static IEndpointRouteBuilder MapOrderEndpoints(this IEndpointRouteBuilder app)
     {
-        // Endpoint: Create a new order
-        app.MapPost("/new-order", async (
-            [FromBody] OrderCreateRequest order,
-            IMediator mediator) =>
+        // Create a new order
+        app.MapPost("/new-order", async ([FromBody] OrderCreateRequest order, IMediator mediator) =>
         {
             var customerCommand = new CustomerCommand(
                 order.Customer.CustomerId,
@@ -43,33 +42,48 @@ public static class OrderEndPoints
             return Results.Ok(result);
         })
         .WithName("CreateOrder")
-        .WithOpenApi()
-        .Produces(200);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Create a new order";
+            operation.Description = "Creates a customer order with product details, pricing, and optional GST.";
+            return operation;
+        })
+        .Produces<IResult<int>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Endpoint: Get full order summary for an order ID
-        app.MapGet("/order-summary", async (
-            [FromQuery] int orderId,
-            IMediator mediator) =>
+        // Get full order summary by ID
+        app.MapGet("/order-summary", async ([FromQuery] int orderId, IMediator mediator) =>
         {
             var query = new GetOrdersummaryQuery(orderId);
             var result = await mediator.Send(query);
             return Results.Ok(result);
         })
-        .WithName("GetOrdersummaryQuery")
-        .WithOpenApi()
-        .Produces(200);
+        .WithName("GetOrderSummary")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get order summary by ID";
+            operation.Description = "Fetches a detailed summary of an order using its order ID.";
+            return operation;
+        })
+        .Produces<IResult<GetOrdersummaryQueryResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Endpoint: Get summary of all customer orders
-        app.MapGet("/customer-orders", async (
-            IMediator mediator) =>
+        // Get summary of all customer orders
+        app.MapGet("/customer-orders", async (IMediator mediator) =>
         {
             var query = new GetCustomerOrderSummaryQuery();
             var result = await mediator.Send(query);
             return Results.Ok(result);
         })
-        .WithName("GetCustomerOrderSummaryQuery")
-        .WithOpenApi()
-        .Produces(200);
+        .WithName("GetCustomerOrderSummary")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get all customer orders summary";
+            operation.Description = "Retrieves summarized information for all customer orders placed.";
+            return operation;
+        })
+        .Produces<IResult<IReadOnlyList<GetCustomerOrderSummaryQueryResponse>>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

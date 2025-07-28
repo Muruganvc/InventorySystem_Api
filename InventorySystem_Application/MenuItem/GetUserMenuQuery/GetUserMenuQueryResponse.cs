@@ -1,5 +1,5 @@
 ﻿namespace InventorySystem_Application.MenuItem.GetUserMenuQuery;
-internal class GetMenuItemQueryResponse
+public class GetMenuItemQueryResponse
 {
     public int Id { get; set; }
     public int ParentId { get; set; }

@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Api.Request;
+using InventorySystem_Application.Common;
 using InventorySystem_Application.CompanyCategoryProduct.CreateCompanyCategoryProduct;
 using InventorySystem_Application.CompanyCategoryProduct.GetCompanyCategoryProductQuery;
 using InventorySystem_Application.CompanyCategoryProduct.GetCompanyCategoryProductsQuery;
@@ -12,7 +13,7 @@ public static class CompanyProductCategoryItemEndPoints
 {
     public static IEndpointRouteBuilder MapCompanyCategoryProductEndpoints(this IEndpointRouteBuilder app)
     {
-        // Create Company Category Product
+        // POST: Create Company Category Product
         app.MapPost("/company-category-product", async (
             [FromBody] CreateCompanyCategoryProductRequest request,
             IMediator mediator) =>
@@ -28,12 +29,18 @@ public static class CompanyProductCategoryItemEndPoints
             return Results.Ok(result);
         })
         .WithName("CreateCompanyCategoryProduct")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Create company-category product";
+            operation.Description = "Creates a new product item associated with a company and a product category.";
+            return operation;
+        })
+         .Produces<IResult<int>>(StatusCodes.Status200OK)
+         .Produces(StatusCodes.Status400BadRequest);
 
-        // Update Company Category Product
-        app.MapPut("/company-category-product/{productItemId}", async (
+
+        // PUT: Update Company Category Product
+        app.MapPut("/company-category-product/{productItemId:int}", async (
             int productItemId,
             [FromBody] UpdateCompanyCategoryProductRequest request,
             IMediator mediator) =>
@@ -50,13 +57,20 @@ public static class CompanyProductCategoryItemEndPoints
             var result = await mediator.Send(command);
             return Results.Ok(result);
         })
-        .WithName("UpdateCompanyCategoryProduct")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+         .WithName("UpdateCompanyCategoryProduct")
+         .WithOpenApi(operation =>
+         {
+             operation.Summary = "Update company-category product";
+             operation.Description = "Updates an existing company-category product item by its ID.";
+             return operation;
+         })
+         .Produces<IResult<bool>>(StatusCodes.Status200OK)
+         .Produces(StatusCodes.Status400BadRequest);
 
-        // Get Company Category Product by ID
-        app.MapGet("/company-category-product/{productCategoryId}", async (
+
+
+        // GET: Get Company Category Product by ID
+        app.MapGet("/company-category-product/{productCategoryId:int}", async (
             int productCategoryId,
             IMediator mediator) =>
         {
@@ -64,20 +78,34 @@ public static class CompanyProductCategoryItemEndPoints
             return Results.Ok(result);
         })
         .WithName("GetCompanyCategoryProductById")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get company-category product by ID";
+            operation.Description = "Returns a single company-category product by its ID.";
+            return operation;
+        })
+        .Produces<GetCompanyCategoryProductQueryResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Get All Company Category Products
-        app.MapGet("/company-category-products/{isAllActive}", async (bool isAllActive, IMediator mediator) =>
+
+        // GET: Get all Company Category Products (filtered by active status)
+        app.MapGet("/company-category-products/{isAllActive:bool}", async (
+            bool isAllActive,
+            IMediator mediator) =>
         {
             var result = await mediator.Send(new GetCompanyCategoryProductsQuery(isAllActive));
             return Results.Ok(result);
         })
         .WithName("GetCompanyCategoryProducts")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get all company-category products";
+            operation.Description = "Retrieves all company-category product items, optionally filtered by active status.";
+            return operation;
+        })
+        .Produces<IReadOnlyList<GetCompanyCategoryProductsQueryResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
 
         return app;
     }

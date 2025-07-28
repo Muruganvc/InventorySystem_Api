@@ -13,7 +13,7 @@ public static class CategoryEndPoints
 {
     public static IEndpointRouteBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
-        // Create Category
+        // POST: Create Category
         app.MapPost("/categories", async (
             [FromBody] CreateCategoryRequest request,
             IMediator mediator) =>
@@ -29,12 +29,18 @@ public static class CategoryEndPoints
             return Results.Ok(result);
         })
         .WithName("CreateCategory")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Create a new category";
+            operation.Description = "Creates a new category under a specified company.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Update Category
-        app.MapPut("/categories/{categoryId}", async (
+
+        // PUT: Update Category
+        app.MapPut("/categories/{categoryId:int}", async (
             int categoryId,
             [FromBody] UpdateCategoryRequest request,
             IMediator mediator) =>
@@ -52,12 +58,18 @@ public static class CategoryEndPoints
             return Results.Ok(result);
         })
         .WithName("UpdateCategory")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Update a category";
+            operation.Description = "Updates the details of an existing category.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Get Category By Id
-        app.MapGet("/categories/{categoryId}", async (
+
+        // GET: Get Category By ID
+        app.MapGet("/categories/{categoryId:int}", async (
             int categoryId,
             IMediator mediator) =>
         {
@@ -65,23 +77,36 @@ public static class CategoryEndPoints
             return Results.Ok(result);
         })
         .WithName("GetCategoryById")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get a category by ID";
+            operation.Description = "Fetches details of a category using its ID.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Get All Categories
-        app.MapGet("/categories", async (IMediator mediator) =>
+
+        // GET: Get All Categories
+        app.MapGet("/categories", async (
+            IMediator mediator) =>
         {
             var result = await mediator.Send(new GetCategoriesQuery());
             return Results.Ok(result);
         })
         .WithName("GetCategories")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get all categories";
+            operation.Description = "Returns a list of all categories available.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
-        // Get Category By company Id
-        app.MapGet("/categories/company/{companyId}", async (
+
+        // GET: Get Categories By Company ID
+        app.MapGet("/categories/company/{companyId:int}", async (
             int companyId,
             IMediator mediator) =>
         {
@@ -89,9 +114,15 @@ public static class CategoryEndPoints
             return Results.Ok(result);
         })
         .WithName("GetCategoryByCompany")
-        .WithOpenApi()
-        .Produces(200)
-        .Produces(400);
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get categories by company ID";
+            operation.Description = "Returns all categories that belong to a specific company.";
+            return operation;
+        })
+        .Produces<IResult>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+         
 
         return app;
     }

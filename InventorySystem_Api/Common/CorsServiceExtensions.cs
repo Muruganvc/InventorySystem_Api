@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using MediatR;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text.Json;
+using System.Windows.Input;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace InventorySystem_Api.Common;
 public static class CorsServiceExtensions
@@ -105,4 +109,68 @@ public static class CorsServiceExtensions
         return services;
     }
 
+    public static void MapCrudEndpoints<TCreateRequest, TUpdateRequest, TId, TCreateResponse, TUpdateResponse, TGetResponse>(
+    this WebApplication app, string baseRoute,
+    Func<TCreateRequest, IRequest<TCreateResponse>> createCommandFactory,
+    Func<TId, TUpdateRequest, IRequest<TUpdateResponse>> updateCommandFactory,
+    Func<TId, IRequest<TGetResponse>> getByIdQueryFactory,
+    Func<IRequest<IEnumerable<TGetResponse>>> getAllQueryFactory,
+    string tag = "Entity", string? policy = null 
+)
+    {
+        var createEndpoint = app.MapPost($"{baseRoute}", async (
+            [FromBody] TCreateRequest request,
+            IMediator mediator) =>
+        {
+            var result = await mediator.Send(createCommandFactory(request));
+            return Results.Ok(result);
+        })
+        .WithName($"Create{tag}")
+        .WithOpenApi()
+        .Produces<TCreateResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
+        var updateEndpoint = app.MapPut($"{baseRoute}/{{id}}", async (
+            TId id,
+            [FromBody] TUpdateRequest request,
+            IMediator mediator) =>
+        {
+            var result = await mediator.Send(updateCommandFactory(id, request));
+            return Results.Ok(result);
+        })
+        .WithName($"Update{tag}")
+        .WithOpenApi()
+        .Produces<TUpdateResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
+        var getByIdEndpoint = app.MapGet($"{baseRoute}/{{id}}", async (
+            TId id,
+            IMediator mediator) =>
+        {
+            var result = await mediator.Send(getByIdQueryFactory(id));
+            return Results.Ok(result);
+        })
+        .WithName($"Get{tag}ById")
+        .WithOpenApi()
+        .Produces<TGetResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
+
+        var getAllEndpoint = app.MapGet($"{baseRoute}", async (
+            IMediator mediator) =>
+        {
+            var result = await mediator.Send(getAllQueryFactory());
+            return Results.Ok(result);
+        })
+        .WithName($"GetAll{tag}s")
+        .WithOpenApi()
+        .Produces<IEnumerable<TGetResponse>>(StatusCodes.Status200OK);
+
+        if (!string.IsNullOrEmpty(policy))
+        {
+            createEndpoint.RequireAuthorization(policy);
+            updateEndpoint.RequireAuthorization(policy);
+            getByIdEndpoint.RequireAuthorization(policy);
+            getAllEndpoint.RequireAuthorization(policy);
+        }
+    }
 }
