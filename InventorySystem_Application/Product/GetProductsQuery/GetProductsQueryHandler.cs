@@ -15,13 +15,13 @@ internal sealed class GetProductsQueryHandler
     }
     public async Task<IResult<IReadOnlyList<GetProductsQueryResponse>>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
-        bool isSales = request.type.ToLower() == "sales";
+        bool isProductRequest = request.type.Equals("product", StringComparison.OrdinalIgnoreCase);
         var result = await _productRepository.Table
             .AsNoTracking()
             .Include(p => p.ProductCategory)
                 .ThenInclude(pc => pc.Category)
                     .ThenInclude(c => c.Company)
-            .Where(p => isSales ||
+            .Where(p => isProductRequest ||
                 (p.IsActive &&
                 p.ProductCategory.IsActive &&
                 p.ProductCategory.Category.IsActive &&
