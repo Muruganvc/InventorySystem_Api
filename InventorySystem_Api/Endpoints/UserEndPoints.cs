@@ -32,7 +32,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetUsersQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetAllUsers")
         .WithOpenApi(operation =>
         {
@@ -46,7 +46,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetUserQuery(userId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetUser")
         .WithOpenApi(operation =>
         {
@@ -97,7 +97,7 @@ public static class UserEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("UpdateUser")
         .WithOpenApi(operation =>
         {
@@ -112,7 +112,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new ActiveOrInActiveUserCommand(userId, isActive));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("UpdateUserStatus")
         .WithOpenApi(operation =>
         {
@@ -127,7 +127,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new AddOrRemoveUserRoleCommand(userId, roleId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("AddOrRemoveUserRole")
         .WithOpenApi(operation =>
         {
@@ -157,7 +157,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new PasswordChangeCommand(userId, request.CurrentPassword, request.PasswordHash));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("Changepassword")
         .WithOpenApi(operation =>
         {
@@ -172,7 +172,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new ForgetPasswordCommand(userId, mobileNo, ""));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("ForgetPassword")
         .WithOpenApi(operation =>
         {
@@ -187,7 +187,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new AddOrRemoveUserMenuItemCommand(userId, menuId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("UserMenuAccessToggle")
         .WithOpenApi(operation =>
         {
@@ -202,7 +202,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetUserMenuQuery(userId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetUserMenu")
         .WithOpenApi(operation =>
         {
@@ -216,7 +216,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetMenusQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("GetAllMenus")
         .WithOpenApi(operation =>
         {
@@ -230,7 +230,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetRolesQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("GetAllRoles")
         .WithOpenApi(operation =>
         {
@@ -244,7 +244,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetRoleByUserQuery(userId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithName("GetUserRolesByUserId")
         .WithOpenApi(operation =>
         {
@@ -258,7 +258,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetCustomerQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCustomers")
         .WithOpenApi(operation =>
         {
@@ -284,7 +284,7 @@ public static class UserEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithOpenApi(operation =>
         {
             operation.Summary = "Create inventory company info";
@@ -308,7 +308,7 @@ public static class UserEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("SuperAdminOnly")
         .WithOpenApi(operation =>
         {
             operation.Summary = "Update inventory company info";
@@ -321,7 +321,7 @@ public static class UserEndPoints
         {
             var result = await mediator.Send(new GetInventoryCompanyInfoQuery(invCompanyInfoId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetInvCompanyInfo")
         .WithOpenApi(operation =>
         {

@@ -9,7 +9,7 @@ public class ProductCategory
     public bool IsActive { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public int CreatedBy { get; private set; }
-    public DateTime ModifiedAt { get; private set; }
+    public DateTime? ModifiedAt { get; private set; }
     public int? ModifiedBy { get; private set; }
     public Category Category { get; private set; } = default!;
     public User CreatedByUser { get; private set; } = default!;
@@ -38,6 +38,5 @@ public class ProductCategory
         ModifiedBy = modifiedBy;
         ModifiedAt = DateTime.UtcNow;
     }
-
 }
 

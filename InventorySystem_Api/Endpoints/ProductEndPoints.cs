@@ -31,7 +31,7 @@ public static class ProductEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("CreateProduct")
         .WithOpenApi(operation =>
         {
@@ -60,7 +60,7 @@ public static class ProductEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("UpdateProduct")
         .WithOpenApi(operation =>
         {
@@ -76,7 +76,7 @@ public static class ProductEndPoints
         {
             var result = await mediator.Send(new GetProductQuery(productId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetProductById")
         .WithOpenApi(operation =>
         {
@@ -92,7 +92,7 @@ public static class ProductEndPoints
         {
             var result = await mediator.Send(new GetProductsQuery(type));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetProducts")
         .WithOpenApi(operation =>
         {
@@ -109,7 +109,7 @@ public static class ProductEndPoints
             var command = new UpdateProductQuantityCommand(productId, request.Quantity, request.RowVersion);
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("UpdateProductQuantity")
         .WithOpenApi(operation =>
         {
@@ -121,12 +121,12 @@ public static class ProductEndPoints
         .Produces(StatusCodes.Status400BadRequest);
 
         // Set Product Active/Inactive
-        app.MapPut("/products/{productId:int}/status", async (int productId, [FromBody] UpdateProductStatusRequest request, IMediator mediator) =>
+        app.MapPut("/product/{productId:int}/status", async (int productId, [FromBody] UpdateProductStatusRequest request, IMediator mediator) =>
         {
             var command = new SetActiveInactiveCommand(productId, request.RowVersion);
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("UpdateProductStatus")
         .WithOpenApi(operation =>
         {

@@ -18,7 +18,7 @@ public class Company //: BaseEntity
     public User? ModifiedByUser { get; private set; }
     public DateTime CreatedAt { get; set; }
     public int CreatedBy { get; set; }
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
     public int? ModifiedBy { get; set; }
     public uint RowVersion { get; }
     public ICollection<Category> Categories { get; private set; } = new List<Category>();

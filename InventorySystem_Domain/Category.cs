@@ -8,7 +8,7 @@ public class Category
 
     public DateTime CreatedAt { get; private set; }
     public int CreatedBy { get; private set; }
-    public DateTime ModifiedAt { get; private set; }
+    public DateTime? ModifiedAt { get; private set; }
     public int? ModifiedBy { get; private set; }
 
     public int? CompanyId { get; private set; }

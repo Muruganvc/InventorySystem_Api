@@ -12,7 +12,7 @@ public class Product
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public int CreatedBy { get; set; }
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
     public int? ModifiedBy { get; set; }
 
     // Navigation properties
@@ -59,12 +59,13 @@ public class Product
     {
         IsActive = !IsActive;
         ModifiedBy = modifiedBy;
+        ModifiedAt = DateTime.UtcNow;
     }
 
     public void QuantityUpdate(int quantity, int modifiedBy)
     {
         Quantity = quantity;
         ModifiedBy = modifiedBy;
+        ModifiedAt = DateTime.UtcNow;
     }
-
 }

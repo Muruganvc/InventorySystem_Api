@@ -27,7 +27,7 @@ public static class CompanyProductCategoryItemEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("CreateCompanyCategoryProduct")
         .WithOpenApi(operation =>
         {
@@ -56,7 +56,7 @@ public static class CompanyProductCategoryItemEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
          .WithName("UpdateCompanyCategoryProduct")
          .WithOpenApi(operation =>
          {
@@ -76,7 +76,7 @@ public static class CompanyProductCategoryItemEndPoints
         {
             var result = await mediator.Send(new GetCompanyCategoryProductQuery(productCategoryId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("GetCompanyCategoryProductById")
         .WithOpenApi(operation =>
         {
@@ -95,7 +95,7 @@ public static class CompanyProductCategoryItemEndPoints
         {
             var result = await mediator.Send(new GetCompanyCategoryProductsQuery(isAllActive));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("GetCompanyCategoryProducts")
         .WithOpenApi(operation =>
         {

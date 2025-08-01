@@ -4,6 +4,7 @@ using InventorySystem_Application.Common;
 using InventorySystem_Application.Common.Mapper;
 using InventorySystem_Domain.Common;
 using InventorySystem_Infrastructure;
+using InventorySystem_Infrastructure.DataBackup;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -73,6 +74,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCustomSwagger();
 
 var app = builder.Build();
+
+//new PostgresBackup().GenerateBackup("D:\\data.sql", "Host=ep-divine-water-a1td5xck-pooler.ap-southeast-1.aws.neon.tech;Port=5432;Username=neondb_owner;Password=npg_4d0CXlpaKrhI;Database=inventory_system;SSL Mode=Require;Trust Server Certificate=true;");
 
 app.UseGlobalExceptionHandler();
 

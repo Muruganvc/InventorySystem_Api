@@ -40,7 +40,7 @@ public static class OrderEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("CreateOrder")
         .WithOpenApi(operation =>
         {
@@ -57,7 +57,7 @@ public static class OrderEndPoints
             var query = new GetOrdersummaryQuery(orderId);
             var result = await mediator.Send(query);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetOrderSummary")
         .WithOpenApi(operation =>
         {
@@ -74,7 +74,7 @@ public static class OrderEndPoints
             var query = new GetCustomerOrderSummaryQuery();
             var result = await mediator.Send(query);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCustomerOrderSummary")
         .WithOpenApi(operation =>
         {

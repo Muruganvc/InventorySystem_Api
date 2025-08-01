@@ -28,6 +28,7 @@ public static class CategoryEndPoints
             var result = await mediator.Send(command);
             return Results.Ok(result);
         })
+        .RequireAuthorization("AdminOnly")
         .WithName("CreateCategory")
         .WithOpenApi(operation =>
         {
@@ -56,7 +57,7 @@ public static class CategoryEndPoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("UpdateCategory")
         .WithOpenApi(operation =>
         {
@@ -75,7 +76,7 @@ public static class CategoryEndPoints
         {
             var result = await mediator.Send(new GetCategoryQuery(categoryId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCategoryById")
         .WithOpenApi(operation =>
         {
@@ -93,7 +94,7 @@ public static class CategoryEndPoints
         {
             var result = await mediator.Send(new GetCategoriesQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCategories")
         .WithOpenApi(operation =>
         {
@@ -112,7 +113,7 @@ public static class CategoryEndPoints
         {
             var result = await mediator.Send(new GetCategoriesByCompanyQuery(companyId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCategoryByCompany")
         .WithOpenApi(operation =>
         {
@@ -122,7 +123,6 @@ public static class CategoryEndPoints
         })
         .Produces<IResult>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest);
-         
 
         return app;
     }

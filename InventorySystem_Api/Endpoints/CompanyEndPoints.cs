@@ -25,7 +25,7 @@ public static class CompanyEndpoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("CreateCompany")
         .WithOpenApi(operation =>
         {
@@ -53,7 +53,7 @@ public static class CompanyEndpoints
 
             var result = await mediator.Send(command);
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AdminOnly")
         .WithName("UpdateCompany")
         .WithOpenApi(operation =>
         {
@@ -72,7 +72,7 @@ public static class CompanyEndpoints
         {
             var result = await mediator.Send(new GetCompanyQuery(companyId));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCompanyById")
         .WithOpenApi(operation =>
         {
@@ -91,7 +91,7 @@ public static class CompanyEndpoints
         {
             var result = await mediator.Send(new GetCompaniesQuery(isAllActiveCompany));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCompanies")
         .WithOpenApi(operation =>
         {

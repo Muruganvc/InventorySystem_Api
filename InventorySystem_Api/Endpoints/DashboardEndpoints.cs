@@ -17,7 +17,7 @@ public static class DashboardEndpoints
         {
             var result = await mediator.Send(new GetCompanyWiseIncomeQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetCompanyWiseIncome")
         .WithOpenApi(operation =>
         {
@@ -33,7 +33,7 @@ public static class DashboardEndpoints
         {
             var result = await mediator.Send(new GetTotalProductQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetTotalProductsSold")
         .WithOpenApi(operation =>
         {
@@ -49,7 +49,7 @@ public static class DashboardEndpoints
         {
             var result = await mediator.Send(new GetProductQuantityQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetProductQuantitySummary")
         .WithOpenApi(operation =>
         {
@@ -68,7 +68,7 @@ public static class DashboardEndpoints
         {
             var result = await mediator.Send(new GetIncomeOrOutcomeSummaryReportQuery(fromDate, endDate));
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetIncomeOutcomeSummaryReport")
         .WithOpenApi(operation =>
         {
@@ -85,7 +85,7 @@ public static class DashboardEndpoints
         {
             var result = await mediator.Send(new GetAuditQuery());
             return Results.Ok(result);
-        })
+        }).RequireAuthorization("AllRoles")
         .WithName("GetAuditLog")
         .WithOpenApi(operation =>
         {
