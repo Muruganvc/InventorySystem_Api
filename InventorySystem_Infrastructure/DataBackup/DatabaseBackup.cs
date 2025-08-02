@@ -22,10 +22,12 @@ namespace InventorySystem_Infrastructure.DataBackup
                 GenerateIndexScripts(connection, scriptBuilder);
 
                 // Step 3: Generate Foreign Key Constraints Scripts
-                GenerateForeignKeyScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
+                //GenerateForeignKeyScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
+
+                GenerateFKAndCompositePKScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
 
                 // Step 4: Generate Primary Key Constraints Scripts (after foreign key constraints)
-                GeneratePrimaryKeyScripts(connectionString, scriptBuilder);  // Ensure this is done sequentially
+                //GeneratePrimaryKeyScripts(connectionString, scriptBuilder);  // Ensure this is done sequentially
 
                 // Step 5: Generate Insert Scripts for Data
                 GenerateInsertScripts(connection, scriptBuilder, connectionString);
@@ -59,17 +61,20 @@ namespace InventorySystem_Infrastructure.DataBackup
 
                         // Get the columns for the current table
                         var createTableQuery = $@"
-                            SELECT column_name, data_type, character_maximum_length
-                            FROM information_schema.columns 
-                            WHERE table_name = '{tableName}'";
+                                SELECT column_name, data_type, character_maximum_length, column_default
+                                FROM information_schema.columns 
+                                WHERE table_name = '{tableName}'  ORDER  BY ORDINAL_POSITION ASC";
 
                         using (var createCmd = new NpgsqlCommand(createTableQuery, newConnection))
                         using (var createReader = createCmd.ExecuteReader())
                         {
-                            scriptBuilder.AppendLine($"CREATE TABLE {tableName} (");
+                            scriptBuilder.AppendLine($"DROP TABLE IF EXISTS {tableName} CASCADE; CREATE TABLE {tableName} (");
 
                             bool firstColumn = true;
-                            string primaryKeyColumn = null;
+                            string? primaryKeyColumn = GetPrimaryKeyIdentityColumn(conn, tableName);
+                            bool hasIdentityColumn = false;
+
+                            // Loop through the columns and generate the appropriate scripts
                             while (createReader.Read())
                             {
                                 if (!firstColumn)
@@ -81,25 +86,34 @@ namespace InventorySystem_Infrastructure.DataBackup
                                 var columnName = createReader.GetString(0);
                                 var dataType = createReader.GetString(1);
                                 var maxLength = createReader.IsDBNull(2) ? string.Empty : $"({createReader.GetInt32(2)})";
+                                var columnDefault = createReader.IsDBNull(3) ? string.Empty : createReader.GetString(3);
 
-                                // Check if the column is an integer and should be an identity column
-                                if (dataType == "integer" && primaryKeyColumn == null)
+                                Console.WriteLine($"Column: {columnName}, DataType: {dataType}, MaxLength: {maxLength}");
+
+                                // Check if the column is intended as the primary key
+                                if (primaryKeyColumn is not null && columnName == primaryKeyColumn && !hasIdentityColumn)
                                 {
-                                    // Mark the first integer column as GENERATED ALWAYS AS IDENTITY and PRIMARY KEY
-                                    scriptBuilder.Append($"    {columnName} INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY");
-                                    primaryKeyColumn = columnName;
+                                     // Get the primary key dynamically
+                                    scriptBuilder.Append($"    {primaryKeyColumn} INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY");
+                                    hasIdentityColumn = true;
                                 }
                                 else
                                 {
                                     scriptBuilder.Append($"    {columnName} {dataType}{maxLength}");
+
+                                    // Add the default value if it exists
+                                    if (!string.IsNullOrEmpty(columnDefault))
+                                    {
+                                        scriptBuilder.Append($" DEFAULT {columnDefault}");
+                                    }
                                 }
                             }
 
-                            // Add primary key constraint for the column if it's not already set
-                            if (primaryKeyColumn == null)
-                            {
-                                AddPrimaryKeyConstraint(tableName, conn, scriptBuilder);
-                            }
+                            // Add primary key constraint if no primary key column is found
+                            //if (primaryKeyColumn != null)
+                            //{
+                            //    scriptBuilder.AppendLine($",    CONSTRAINT {tableName}_pkey PRIMARY KEY ({primaryKeyColumn})");
+                            //}
 
                             scriptBuilder.AppendLine();
                             scriptBuilder.AppendLine(");");
@@ -109,6 +123,111 @@ namespace InventorySystem_Infrastructure.DataBackup
                 }
             }
         }
+
+
+        // Helper method to get the primary key column dynamically
+        private string? GetPrimaryKeyIdentityColumn(string connection, string tableName)
+        {
+            var query = $@"
+                    SELECT kc.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kc
+                        ON kc.constraint_name = tc.constraint_name
+                        AND kc.table_name = tc.table_name
+                    JOIN information_schema.columns c
+                        ON c.table_name = kc.table_name
+                        AND c.column_name = kc.column_name
+                    WHERE tc.table_name = '{tableName}'
+                      AND tc.constraint_type = 'PRIMARY KEY'
+                      AND c.is_identity = 'YES'";
+
+            using var newConnection = new NpgsqlConnection(connection);
+            newConnection.Open();
+
+            using var cmd = new NpgsqlCommand(query, newConnection);
+            using var reader = cmd.ExecuteReader();
+    {
+                if (reader.Read())
+                {
+                    return reader.GetString(0);  // Return the PK column name if it's also identity
+                }
+            }
+
+            return null;  // Return null if not found
+        }
+
+
+
+
+        //private void GenerateTableCreationScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
+        //{
+        //    var tablesQuery = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
+
+        //    using (var cmd = new NpgsqlCommand(tablesQuery, connection))
+        //    using (var reader = cmd.ExecuteReader())
+        //    {
+        //        while (reader.Read())
+        //        {
+        //            var tableName = reader.GetString(0);
+        //            Console.WriteLine($"Generating creation script for table: {tableName}");
+
+        //            // Open a separate connection for column definitions
+        //            using (var newConnection = new NpgsqlConnection(conn))
+        //            {
+        //                newConnection.Open();
+
+        //                // Get the columns for the current table
+        //                var createTableQuery = $@"
+        //                    SELECT column_name, data_type, character_maximum_length
+        //                    FROM information_schema.columns 
+        //                    WHERE table_name = '{tableName}'";
+
+        //                using (var createCmd = new NpgsqlCommand(createTableQuery, newConnection))
+        //                using (var createReader = createCmd.ExecuteReader())
+        //                {
+        //                    scriptBuilder.AppendLine($"CREATE TABLE {tableName} (");
+
+        //                    bool firstColumn = true;
+        //                    string? primaryKeyColumn = null;
+        //                    while (createReader.Read())
+        //                    {
+        //                        if (!firstColumn)
+        //                        {
+        //                            scriptBuilder.AppendLine(",");
+        //                        }
+        //                        firstColumn = false;
+
+        //                        var columnName = createReader.GetString(0);
+        //                        var dataType = createReader.GetString(1);
+        //                        var maxLength = createReader.IsDBNull(2) ? string.Empty : $"({createReader.GetInt32(2)})";
+
+        //                        // Check if the column is an integer and should be an identity column
+        //                        if (dataType == "integer" && primaryKeyColumn == null)
+        //                        {
+        //                            // Mark the first integer column as GENERATED ALWAYS AS IDENTITY and PRIMARY KEY
+        //                            scriptBuilder.Append($"    {columnName} INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY");
+        //                            primaryKeyColumn = columnName;
+        //                        }
+        //                        else
+        //                        {
+        //                            scriptBuilder.Append($"    {columnName} {dataType}{maxLength}");
+        //                        }
+        //                    }
+
+        //                    // Add primary key constraint for the column if it's not already set
+        //                    if (primaryKeyColumn == null)
+        //                    {
+        //                        AddPrimaryKeyConstraint(tableName, conn, scriptBuilder);
+        //                    }
+
+        //                    scriptBuilder.AppendLine();
+        //                    scriptBuilder.AppendLine(");");
+        //                    scriptBuilder.AppendLine();
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
 
         // Method to retrieve and add primary key constraint
         private void AddPrimaryKeyConstraint(string tableName, string conn, StringBuilder scriptBuilder)
@@ -163,16 +282,13 @@ namespace InventorySystem_Infrastructure.DataBackup
                     }
                 }
             }
-        }
-
-
-        
+        } 
         private void GenerateIndexScripts(NpgsqlConnection connection, StringBuilder scriptBuilder)
         {
             var indexesQuery = @"
-                SELECT indexname, indexdef 
-                FROM pg_indexes
-                WHERE schemaname = 'public'";
+        SELECT indexname, indexdef 
+        FROM pg_indexes
+        WHERE schemaname = 'public'";
 
             using var cmd = new NpgsqlCommand(indexesQuery, connection);
             using var reader = cmd.ExecuteReader();
@@ -180,8 +296,25 @@ namespace InventorySystem_Infrastructure.DataBackup
             {
                 var indexName = reader.GetString(0);
                 var indexDef = reader.GetString(1);
+
                 Console.WriteLine($"Generating index script for index: {indexName}");
 
+                // Skip Primary Key indexes (typically named 'table_name_pkey')
+                if (indexName.EndsWith("_pkey"))
+                {
+                    Console.WriteLine($"Skipping primary key index: {indexName}");
+                    continue;
+                }
+
+                // Ensure unique index for user_name column
+                if (indexDef.Contains("user_name") && !indexDef.Contains("UNIQUE"))
+                {
+                    // If the index definition doesn't already have UNIQUE, make sure it's unique
+                    Console.WriteLine("Ensuring unique constraint on user_name.");
+                    indexDef = $"CREATE UNIQUE INDEX {indexName} ON {indexDef.Substring(indexDef.IndexOf("ON") + 3)};";
+                }
+
+                // Ensure the index definition ends with a semicolon
                 if (!indexDef.EndsWith(";"))
                 {
                     indexDef += ";";
@@ -190,6 +323,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                 scriptBuilder.AppendLine(indexDef);
             }
         }
+
         private void GeneratePrimaryKeyScripts(string conn, StringBuilder scriptBuilder)
         {
             // Open a new connection specifically for primary key query
@@ -276,66 +410,105 @@ namespace InventorySystem_Infrastructure.DataBackup
                 }
             }
         }
-
-        //private void GenerateForeignKeyScripts(NpgsqlConnection connection, StringBuilder scriptBuilder)
+        //private async Task GenerateForeignKeyScriptsAsync(NpgsqlConnection connection, StringBuilder scriptBuilder, string conString)
         //{
         //    var fkQuery = @"
-        //        SELECT conname, condeferrable, condeferred, pg_get_constraintdef(oid)
-        //        FROM pg_constraint
-        //        WHERE connamespace = 'public'::regnamespace";
+        //SELECT conname, condeferrable, condeferred, pg_get_constraintdef(oid), conrelid
+        //FROM pg_constraint
+        //WHERE connamespace = 'public'::regnamespace";  // Ensure it's looking in the 'public' schema
 
         //    using var cmd = new NpgsqlCommand(fkQuery, connection);
-        //    using var reader = cmd.ExecuteReader();
-        //    while (reader.Read())
-        //    {
-        //        var constraintName = reader.GetString(0);
-        //        var constraintDef = reader.GetString(3);
-        //        Console.WriteLine($"Generating foreign key script for constraint: {constraintName}");
+        //    using var reader = await cmd.ExecuteReaderAsync();
 
-        //        scriptBuilder.AppendLine($"-- Foreign Key {constraintName}");
-        //        scriptBuilder.AppendLine($"ALTER TABLE {constraintDef};");
+        //    while (await reader.ReadAsync())
+        //    {
+        //        var constraintName = reader.GetString(0);  // Name of the constraint (FK, PK, etc.)
+        //        var constraintDef = reader.GetString(3);  // The full constraint definition (e.g., column(s) involved)
+
+        //        // The table OID is fetched from the 'conrelid' column.
+        //        var tableOid = reader.GetValue(4);  // This is the OID of the table involved in the constraint
+
+        //        Console.WriteLine($"Generating script for constraint: {constraintName}");
+
+        //        // Convert the tableOid to long (you could use int or uint depending on your DB)
+        //        long tableOidLong = Convert.ToInt64(tableOid);  // Ensure you're using the correct type
+
+        //        // Get the table name using the OID asynchronously
+        //        var tableName = await GetTableNameFromOidAsync(conString, tableOidLong);
+
+        //        // Generate the constraint script based on the definition
+        //        string script = GenerateConstraintScriptFromDef(constraintDef, tableName, constraintName);
+
+        //        // Append the script to the StringBuilder
+        //        scriptBuilder.AppendLine($"-- Constraint {constraintName}");
+        //        scriptBuilder.AppendLine(script);
         //    }
         //}
 
-        private async Task GenerateForeignKeyScriptsAsync(NpgsqlConnection connection, StringBuilder scriptBuilder, string conString)
-        {
-            var fkQuery = @"
-        SELECT conname, condeferrable, condeferred, pg_get_constraintdef(oid), conrelid
-        FROM pg_constraint
-        WHERE connamespace = 'public'::regnamespace";  // Ensure it's looking in the 'public' schema
 
-            using var cmd = new NpgsqlCommand(fkQuery, connection);
+        private async Task GenerateFKAndCompositePKScriptsAsync(NpgsqlConnection connection, StringBuilder scriptBuilder, string conString)
+        {
+            var constraintQuery = @"
+                    SELECT 
+                        conname, 
+                        contype,
+                        pg_get_constraintdef(oid) AS constraint_def,
+                        conrelid
+                    FROM pg_constraint
+                    WHERE connamespace = 'public'::regnamespace
+                      AND (
+                        contype = 'f' -- Foreign Key
+                        OR (contype = 'p' AND array_length(conkey, 1) > 1) -- Composite PK
+                )";
+
+            using var cmd = new NpgsqlCommand(constraintQuery, connection);
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
-                var constraintName = reader.GetString(0);  // Name of the constraint (FK, PK, etc.)
-                var constraintDef = reader.GetString(3);  // The full constraint definition (e.g., column(s) involved)
+                string constraintName = reader.GetString(0);
+                char constraintType = Convert.ToChar(reader.GetValue(1)); // 'f' or 'p'
+                string constraintDef = reader.GetString(2);
+                long tableOid = Convert.ToInt64(reader.GetValue(3));
 
-                // The table OID is fetched from the 'conrelid' column.
-                var tableOid = reader.GetValue(4);  // This is the OID of the table involved in the constraint
+                string tableName = await GetTableNameFromOidAsync(conString, tableOid);
 
-                Console.WriteLine($"Generating script for constraint: {constraintName}");
-
-                // Convert the tableOid to long (you could use int or uint depending on your DB)
-                long tableOidLong = Convert.ToInt64(tableOid);  // Ensure you're using the correct type
-
-                // Get the table name using the OID asynchronously
-                var tableName = await GetTableNameFromOidAsync(conString, tableOidLong);
-
-                // Generate the constraint script based on the definition
                 string script = GenerateConstraintScriptFromDef(constraintDef, tableName, constraintName);
 
-                // Append the script to the StringBuilder
-                scriptBuilder.AppendLine($"-- Constraint {constraintName}");
+                scriptBuilder.AppendLine($"-- {constraintType switch { 'f' => "Foreign Key", 'p' => "Composite Primary Key", _ => "Constraint" }}: {constraintName}");
                 scriptBuilder.AppendLine(script);
             }
         }
 
 
+
         /// <summary>
         /// Generates the ALTER TABLE script based on the constraint definition (primary key, foreign key, etc.).
         /// </summary>
+        //private string GenerateConstraintScriptFromDef(string constraintDef, string tableName, string constraintName)
+        //{
+        //    var builder = new StringBuilder();
+
+        //    // If the constraint is a Primary Key
+        //    if (constraintDef.StartsWith("PRIMARY KEY"))
+        //    {
+        //        builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} PRIMARY KEY ({ExtractColumnsFromConstraintDef(constraintDef)});");
+        //    }
+        //    // If the constraint is a Foreign Key
+        //    else
+        //    if (constraintDef.StartsWith("FOREIGN KEY"))
+        //    {
+        //        builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} FOREIGN KEY ({ExtractColumnsFromConstraintDef(constraintDef)})");
+        //        builder.AppendLine($"  {constraintDef.Substring(constraintDef.IndexOf("REFERENCES"))};");
+        //    }
+        //    else
+        //    {
+        //        builder.AppendLine($"-- Unsupported constraint type: {constraintDef}");
+        //    }
+
+        //    return builder.ToString();
+        //}
+
         private string GenerateConstraintScriptFromDef(string constraintDef, string tableName, string constraintName)
         {
             var builder = new StringBuilder();
@@ -343,13 +516,23 @@ namespace InventorySystem_Infrastructure.DataBackup
             // If the constraint is a Primary Key
             if (constraintDef.StartsWith("PRIMARY KEY"))
             {
-                builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} PRIMARY KEY {ExtractColumnsFromConstraintDef(constraintDef)};");
+                var columns = ExtractColumnsFromConstraintDef(constraintDef);
+                var columnList = columns.Split(',').Select(c => c.Trim()).ToList();
+
+                // Only include composite primary keys (more than one column)
+                if (columnList.Count > 1)
+                {
+                    builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} PRIMARY KEY ({string.Join(", ", columnList)});");
+                }
             }
             // If the constraint is a Foreign Key
             else if (constraintDef.StartsWith("FOREIGN KEY"))
             {
-                builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} FOREIGN KEY {ExtractColumnsFromConstraintDef(constraintDef)};");
-                builder.AppendLine($"  {constraintDef.Substring(constraintDef.IndexOf("REFERENCES"))};");
+                var columns = ExtractColumnsFromConstraintDef(constraintDef);
+                var referencesPart = constraintDef.Substring(constraintDef.IndexOf("REFERENCES", StringComparison.Ordinal));
+
+                builder.AppendLine($"ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} FOREIGN KEY ({columns})");
+                builder.AppendLine($"  {referencesPart};");
             }
             else
             {
@@ -358,6 +541,7 @@ namespace InventorySystem_Infrastructure.DataBackup
 
             return builder.ToString();
         }
+
 
         /// <summary>
         /// Asynchronously fetches the table name by OID.
@@ -393,8 +577,7 @@ namespace InventorySystem_Infrastructure.DataBackup
 
             return columnsPart;
         }
-
-
+         
 
         private void GenerateInsertScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
         {
@@ -431,7 +614,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                         }
                     }
 
-                    var dataQuery = $"SELECT * FROM {tableName}";
+                    var dataQuery = $"SELECT * FROM {tableName} order by 1 asc";
                     using var dataCmd = new NpgsqlCommand(dataQuery, newConnection);
                     using var dataReader = dataCmd.ExecuteReader();
                     {
@@ -445,7 +628,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                             {
                                 var columnName = dataReader.GetName(i);
 
-                                if (primaryKeyColumns.Contains(columnName))
+                                if (tableName != "user_roles" &&  primaryKeyColumns.Contains(columnName))
                                 {
                                     continue;
                                 }
@@ -454,6 +637,13 @@ namespace InventorySystem_Infrastructure.DataBackup
                                 if (columnValue == DBNull.Value)
                                 {
                                     columnValues.Add("NULL");
+                                }
+                                else if (columnValue is byte[])
+                                {
+                                    // Convert byte[] to hexadecimal string
+                                    var byteArray = (byte[])columnValue;
+                                    var hexString = BitConverter.ToString(byteArray).Replace("-", string.Empty);
+                                    columnValues.Add($"'\\x{hexString}'");  // PostgreSQL expects \x for bytea data
                                 }
                                 else if (columnValue is string)
                                 {
