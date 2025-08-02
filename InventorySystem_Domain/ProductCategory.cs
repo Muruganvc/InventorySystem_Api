@@ -3,7 +3,7 @@
 public class ProductCategory
 {
     public int ProductCategoryId { get; private set; }
-    public string ProductCategoryName { get; private set; } = default!;
+    public string? ProductCategoryName { get; private set; } = default!;
     public int CategoryId { get; private set; }
     public string? Description { get; private set; }
     public bool IsActive { get; private set; }
@@ -17,11 +17,11 @@ public class ProductCategory
     public uint RowVersion { get; }
     public ICollection<Product> Products { get; set; } = new List<Product>();
 
-    public static ProductCategory Create(string name, int categoryId, int createdBy, string? description = null, bool isActive = false)
+    public static ProductCategory Create(string? productCategoryName, int categoryId, int createdBy, string? description = null, bool isActive = false)
     {
         return new ProductCategory
         {
-            ProductCategoryName = name,
+            ProductCategoryName = productCategoryName,
             Description = description,
             CategoryId = categoryId,
             IsActive = isActive,

@@ -19,7 +19,7 @@ public static class CompanyProductCategoryItemEndPoints
             IMediator mediator) =>
         {
             var command = new CreateCompanyCategoryProductCommand(
-                request.categoryProductName,
+                request.CategoryProductName ?? null,
                 request.CategoryId,
                 request.Description,
                 request.IsActive

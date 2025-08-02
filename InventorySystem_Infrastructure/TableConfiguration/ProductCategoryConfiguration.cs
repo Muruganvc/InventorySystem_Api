@@ -17,8 +17,8 @@ public class ProductCategoryConfiguration : IEntityTypeConfiguration<ProductCate
 
         builder.Property(pc => pc.ProductCategoryName)
             .HasColumnName("product_category_name")
-            .HasMaxLength(100)
-            .IsRequired();
+            .HasMaxLength(100);
+            //.IsRequired();
 
         builder.Property(pc => pc.CategoryId)
                 .HasColumnName("category_id");

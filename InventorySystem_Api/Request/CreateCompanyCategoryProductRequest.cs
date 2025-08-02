@@ -1,4 +1,4 @@
 ﻿namespace InventorySystem_Api.Request;
 public record CreateCompanyCategoryProductRequest(
-    string categoryProductName, 
+    string? CategoryProductName, 
     int CategoryId, string? Description, bool IsActive);

@@ -10,6 +10,7 @@ using InventorySystem_Application.MenuItem.GetUserMenuQuery;
 using InventorySystem_Application.Users.ActiveOrInActiveUserCommand;
 using InventorySystem_Application.Users.AddOrRemoveUserRoleCommand;
 using InventorySystem_Application.Users.CreateUserCommand;
+using InventorySystem_Application.Users.DatabaseBackupCommand;
 using InventorySystem_Application.Users.ForgetPasswordCommand;
 using InventorySystem_Application.Users.GetAllRoles;
 using InventorySystem_Application.Users.GetRoleByUserQuery;
@@ -21,6 +22,7 @@ using InventorySystem_Application.Users.UpdateUserCommand;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace InventorySystem_Api.Endpoints;
 
@@ -330,6 +332,41 @@ public static class UserEndPoints
             return operation;
         })
         .Produces<IResult<GetInventoryCompanyInfoQueryResponse>>(StatusCodes.Status200OK);
+
+
+        app.MapPost("/database-backup", static async (IConfiguration config, IMediator mediator) =>
+        {
+            // Create a new command to trigger the database backup
+            var command = new DatabaseBackupCommand(config.GetConnectionString("DefaultConnection")!);
+
+            // Execute the command through the mediator to get the SQL content (backup content)
+            var sqlContent = await mediator.Send(command);
+
+            // Check if the sqlContent is null, and return a BadRequest if so
+            if (string.IsNullOrEmpty(sqlContent.Value.ToString()))
+            {
+                return Results.BadRequest("Failed to generate database backup. The SQL content is empty.");
+            }
+
+            // Convert the SQL content to a byte array
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sqlContent.Value.ToString());
+
+            // Set file name for the download
+            var fileName = "database_backup.sql";
+
+            // Return the file as a download response with the appropriate MIME type
+            return Results.File(bytes, "application/sql", fileName);
+           })
+            .RequireAuthorization("AllRoles")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Create a database backup";  
+                operation.Description = "Triggers the creation of a database backup, ensuring data safety and recovery.";
+                return operation;
+            })
+            .Produces<IResult<int>>(StatusCodes.Status200OK);
+
+
 
         return app;
     }

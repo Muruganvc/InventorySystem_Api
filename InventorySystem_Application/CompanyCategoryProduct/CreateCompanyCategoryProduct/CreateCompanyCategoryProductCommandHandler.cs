@@ -30,11 +30,11 @@ internal sealed class CreateCompanyCategoryProductCommandHandler : IRequestHandl
         if (isExistsCategory == null)
             return Result<int>.Failure("Selected category not found.");
 
+        var normalizedName = request.ProductCategoryName?.Replace(" ", string.Empty).ToLower();
+
         var isExistsItem = await _productCategoryRepository.GetByAsync(a =>
-            a.CategoryId == request.CategoryId &&
-            a.ProductCategoryName.Replace(" ", string.Empty).ToLower() ==
-            request.ProductCategoryName.Replace(" ", string.Empty).ToLower()
-        );
+              a.CategoryId == request.CategoryId &&
+              a.ProductCategoryName == request.ProductCategoryName);
 
         if (isExistsItem != null)
         {

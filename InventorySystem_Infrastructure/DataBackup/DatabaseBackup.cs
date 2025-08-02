@@ -3,9 +3,11 @@ using System.Text;
 
 namespace InventorySystem_Infrastructure.DataBackup
 {
-    public class PostgresBackup
+    public static class PostgresBackup
     {
-        public void GenerateBackup(string backupFilePath, string connectionString)
+        public static async Task<StringBuilder> GenerateBackup(
+            //string backupFilePath, 
+            string connectionString)
         {
             try
             {
@@ -24,7 +26,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                 // Step 3: Generate Foreign Key Constraints Scripts
                 //GenerateForeignKeyScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
 
-                GenerateFKAndCompositePKScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
+                await GenerateFKAndCompositePKScriptsAsync(connection, scriptBuilder, connectionString);
 
                 // Step 4: Generate Primary Key Constraints Scripts (after foreign key constraints)
                 //GeneratePrimaryKeyScripts(connectionString, scriptBuilder);  // Ensure this is done sequentially
@@ -33,16 +35,18 @@ namespace InventorySystem_Infrastructure.DataBackup
                 GenerateInsertScripts(connection, scriptBuilder, connectionString);
 
                 // Save to file
-                File.WriteAllText(backupFilePath, scriptBuilder.ToString());
-                Console.WriteLine($"Backup script generated: {backupFilePath}");
+                //File.WriteAllText(backupFilePath, scriptBuilder.ToString());
+                //Console.WriteLine($"Backup script generated: {backupFilePath}");
+                return scriptBuilder;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
+                return null;
             }
         }
 
-        private void GenerateTableCreationScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
+        private static void GenerateTableCreationScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
         {
             var tablesQuery = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
 
@@ -126,7 +130,7 @@ namespace InventorySystem_Infrastructure.DataBackup
 
 
         // Helper method to get the primary key column dynamically
-        private string? GetPrimaryKeyIdentityColumn(string connection, string tableName)
+        private static string? GetPrimaryKeyIdentityColumn(string connection, string tableName)
         {
             var query = $@"
                     SELECT kc.column_name
@@ -230,7 +234,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         //}
 
         // Method to retrieve and add primary key constraint
-        private void AddPrimaryKeyConstraint(string tableName, string conn, StringBuilder scriptBuilder)
+        private static void AddPrimaryKeyConstraint(string tableName, string conn, StringBuilder scriptBuilder)
         {
             // Open a new connection for primary key constraint query
             using (var newConnection = new NpgsqlConnection(conn))
@@ -283,7 +287,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                 }
             }
         } 
-        private void GenerateIndexScripts(NpgsqlConnection connection, StringBuilder scriptBuilder)
+        private static void GenerateIndexScripts(NpgsqlConnection connection, StringBuilder scriptBuilder)
         {
             var indexesQuery = @"
         SELECT indexname, indexdef 
@@ -324,7 +328,7 @@ namespace InventorySystem_Infrastructure.DataBackup
             }
         }
 
-        private void GeneratePrimaryKeyScripts(string conn, StringBuilder scriptBuilder)
+        private static void GeneratePrimaryKeyScripts(string conn, StringBuilder scriptBuilder)
         {
             // Open a new connection specifically for primary key query
             using (var newConnection = new NpgsqlConnection(conn))
@@ -446,7 +450,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         //}
 
 
-        private async Task GenerateFKAndCompositePKScriptsAsync(NpgsqlConnection connection, StringBuilder scriptBuilder, string conString)
+        private static async Task GenerateFKAndCompositePKScriptsAsync(NpgsqlConnection connection, StringBuilder scriptBuilder, string conString)
         {
             var constraintQuery = @"
                     SELECT 
@@ -509,7 +513,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         //    return builder.ToString();
         //}
 
-        private string GenerateConstraintScriptFromDef(string constraintDef, string tableName, string constraintName)
+        private static string GenerateConstraintScriptFromDef(string constraintDef, string tableName, string constraintName)
         {
             var builder = new StringBuilder();
 
@@ -546,7 +550,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         /// <summary>
         /// Asynchronously fetches the table name by OID.
         /// </summary>
-        private async Task<string> GetTableNameFromOidAsync(string conString, long tableOid)
+        private static async Task<string> GetTableNameFromOidAsync(string conString, long tableOid)
         {
             using var connection = new NpgsqlConnection(conString);
             connection.Open();
@@ -563,7 +567,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         /// <summary>
         /// Extracts the column names from the constraint definition (e.g., PRIMARY KEY (col1, col2)).
         /// </summary>
-        private string ExtractColumnsFromConstraintDef(string constraintDef)
+        private static string ExtractColumnsFromConstraintDef(string constraintDef)
         {
             // Look for the part inside parentheses after "PRIMARY KEY" or "FOREIGN KEY"
             var startIdx = constraintDef.IndexOf('(');
@@ -579,7 +583,7 @@ namespace InventorySystem_Infrastructure.DataBackup
         }
          
 
-        private void GenerateInsertScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
+        private static void GenerateInsertScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
         {
             var tablesQuery = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
 
