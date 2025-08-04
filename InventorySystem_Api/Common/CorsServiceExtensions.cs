@@ -26,7 +26,8 @@ public static class CorsServiceExtensions
                     var result = JsonSerializer.Serialize(new
                     {
                         context.Response.StatusCode,
-                        error.Message,
+                        Message = "Server failure",
+                        Exeception = error.Message,
                         Detailed = error.InnerException?.Message
                     });
 
