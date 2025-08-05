@@ -1,10 +1,12 @@
 ﻿using InventorySystem_Api.Request;
+using InventorySystem_Application.Company.BulkCompanyCommand;
 using InventorySystem_Application.Company.CreateCompanyCommand;
 using InventorySystem_Application.Company.GetCompaniesQuery;
 using InventorySystem_Application.Company.GetCompanyQuery;
 using InventorySystem_Application.Company.UpdateCompnayCommand;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace InventorySystem_Api.Endpoints;
 
@@ -102,6 +104,37 @@ public static class CompanyEndpoints
         .Produces<IResult>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest);
 
+
+
+        app.MapPost("/bulk-company", async (
+     List<BulkComapanyRequest> request,
+     IMediator mediator) =>
+        {
+            var bulkCompanyEntries = new List<BulkCompanyEntry>();
+            request.ForEach(a =>
+            {
+                bulkCompanyEntries.Add(new BulkCompanyEntry(
+                    a.CompanyName,
+                    a.CategoryName,
+                    a.ProductCategoryName
+                ));
+            });
+            var command = new BulkCompanyCommand(bulkCompanyEntries);
+            var result = await mediator.Send(command);
+
+            return Results.Ok(result);
+        })
+ .RequireAuthorization("AllRoles")
+ .WithName("BulkCompanyCommand")
+ .WithOpenApi(operation =>
+ {
+     operation.Summary = "Bulk Company Upload";
+     operation.Description = "Uploads a list of companies in bulk, including their company name, category name, and product category name.";
+     operation.Description += " The operation returns a success status along with the processed entries or any validation errors if present.";
+     return operation;
+ })
+ .Produces<IResult>(StatusCodes.Status200OK)
+ .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }
