@@ -104,12 +104,15 @@ internal sealed class GetTotalProductQueryHandler
             ))
             .ToList();
 
+        decimal totalStockValue = _productRepository.Table.ToList().Aggregate(0m, (acc, item) => acc + (item.Quantity * item.SalesPrice));
+
         // Construct final response
         var response = new GetTotalProductQueryResponse(
             TotalQuantity: totalQuantity,
             TotalNetAmount: totalRevenue,
             BalanceAmount: outstandingAmount,
-            CompanyWiseSales: companyWiseTotals
+            CompanyWiseSales: companyWiseTotals,
+            TotalStockValue: totalStockValue
         );
 
         return Result<GetTotalProductQueryResponse>.Success(response);

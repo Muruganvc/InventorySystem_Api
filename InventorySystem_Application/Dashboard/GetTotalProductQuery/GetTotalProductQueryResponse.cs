@@ -8,4 +8,4 @@ public record GetCompanyWiseSalesResponse(
 public record GetTotalProductQueryResponse (decimal TotalQuantity,
     decimal TotalNetAmount,
     decimal BalanceAmount,
-    List<GetCompanyWiseSalesResponse> CompanyWiseSales);
+    List<GetCompanyWiseSalesResponse> CompanyWiseSales, decimal TotalStockValue);
