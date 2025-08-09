@@ -4,7 +4,7 @@ public class Category
     public int CategoryId { get; private set; }
     public string CategoryName { get; private set; } = default!;
     public string? Description { get; private set; }
-    public bool IsActive { get; private set; } = true;
+    public bool IsActive { get; private set; } = false;
 
     public DateTime CreatedAt { get; private set; }
     public int CreatedBy { get; private set; }
