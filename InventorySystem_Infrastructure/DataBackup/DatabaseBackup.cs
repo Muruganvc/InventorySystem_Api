@@ -15,6 +15,8 @@ namespace InventorySystem_Infrastructure.DataBackup
                 connection.Open();
                 Console.WriteLine("Connected to the database.");
 
+                new TempBackUp().Temp(connectionString);
+
                 var scriptBuilder = new StringBuilder();
 
                 // Step 1: Generate Table Creation Scripts
@@ -58,25 +60,24 @@ namespace InventorySystem_Infrastructure.DataBackup
                     var tableName = reader.GetString(0);
                     Console.WriteLine($"Generating creation script for table: {tableName}");
 
-                    // Open a separate connection for column definitions
-                    using (var newConnection = new NpgsqlConnection(conn))
+                    // Get the columns for the current table
+                    using (var columnConnection = new NpgsqlConnection(conn))
                     {
-                        newConnection.Open();
+                        columnConnection.Open();
 
-                        // Get the columns for the current table
                         var createTableQuery = $@"
-                                SELECT column_name, data_type, character_maximum_length, column_default
-                                FROM information_schema.columns 
-                                WHERE table_name = '{tableName}'  ORDER  BY ORDINAL_POSITION ASC";
+                        SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
+                        FROM information_schema.columns 
+                        WHERE table_name = '{tableName}' ORDER BY ordinal_position ASC";
 
-                        using (var createCmd = new NpgsqlCommand(createTableQuery, newConnection))
+                        using (var createCmd = new NpgsqlCommand(createTableQuery, columnConnection))
                         using (var createReader = createCmd.ExecuteReader())
                         {
                             scriptBuilder.AppendLine($"DROP TABLE IF EXISTS {tableName} CASCADE; CREATE TABLE {tableName} (");
 
                             bool firstColumn = true;
+                            bool hasPrimaryKey = false;
                             string? primaryKeyColumn = GetPrimaryKeyIdentityColumn(conn, tableName);
-                            bool hasIdentityColumn = false;
 
                             // Loop through the columns and generate the appropriate scripts
                             while (createReader.Read())
@@ -91,21 +92,20 @@ namespace InventorySystem_Infrastructure.DataBackup
                                 var dataType = createReader.GetString(1);
                                 var maxLength = createReader.IsDBNull(2) ? string.Empty : $"({createReader.GetInt32(2)})";
                                 var columnDefault = createReader.IsDBNull(3) ? string.Empty : createReader.GetString(3);
+                                var isNullable = createReader.GetString(4) == "YES" ? "NULL" : "NOT NULL";
 
-                                Console.WriteLine($"Column: {columnName}, DataType: {dataType}, MaxLength: {maxLength}");
+                                Console.WriteLine($"Column: {columnName}, DataType: {dataType}, MaxLength: {maxLength}, Nullable: {isNullable}");
 
-                                // Check if the column is intended as the primary key
-                                if (primaryKeyColumn is not null && columnName == primaryKeyColumn && !hasIdentityColumn)
+                                // Check for Primary Key column
+                                if (!hasPrimaryKey && primaryKeyColumn == columnName)
                                 {
-                                    // Get the primary key dynamically
-                                    scriptBuilder.Append($"    {primaryKeyColumn} INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY");
-                                    hasIdentityColumn = true;
+                                    scriptBuilder.Append($"    {columnName} INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY");
+                                    hasPrimaryKey = true;
                                 }
                                 else
                                 {
-                                    scriptBuilder.Append($"    {columnName} {dataType}{maxLength}");
+                                    scriptBuilder.Append($"    {columnName} {dataType}{maxLength} {isNullable}");
 
-                                    // Add the default value if it exists
                                     if (!string.IsNullOrEmpty(columnDefault))
                                     {
                                         scriptBuilder.Append($" DEFAULT {columnDefault}");
@@ -113,11 +113,97 @@ namespace InventorySystem_Infrastructure.DataBackup
                                 }
                             }
 
-                            // Add primary key constraint if no primary key column is found
-                            //if (primaryKeyColumn != null)
-                            //{
-                            //    scriptBuilder.AppendLine($",    CONSTRAINT {tableName}_pkey PRIMARY KEY ({primaryKeyColumn})");
-                            //}
+                            // Add the Primary Key constraint if necessary
+                            if (primaryKeyColumn != null && !hasPrimaryKey)
+                            {
+                                scriptBuilder.AppendLine($",    CONSTRAINT {tableName}_pkey PRIMARY KEY ({primaryKeyColumn})");
+                            }
+
+                            // Add Foreign Keys
+                            using (var fkConnection = new NpgsqlConnection(conn))
+                            {
+                                fkConnection.Open();
+
+                                var foreignKeysQuery = $@"
+                            SELECT 
+                                conname, 
+                                pg_catalog.pg_get_constraintdef(r.oid) 
+                            FROM 
+                                pg_catalog.pg_constraint r
+                                INNER JOIN pg_catalog.pg_namespace n ON n.oid = r.connamespace
+                            WHERE 
+                                conrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = '{tableName}') 
+                                AND n.nspname = 'public'";
+
+                                using (var fkCmd = new NpgsqlCommand(foreignKeysQuery, fkConnection))
+                                using (var fkReader = fkCmd.ExecuteReader())
+                                {
+                                    while (fkReader.Read())
+                                    {
+                                        var constraintName = fkReader.GetString(0);
+                                        var constraintDef = fkReader.GetString(1);
+                                        scriptBuilder.AppendLine($",    CONSTRAINT {constraintName} {constraintDef}");
+                                    }
+                                }
+                            }
+
+                            // Add Unique Constraints (ensure uniqueness only once)
+                            using (var uniqueConnection = new NpgsqlConnection(conn))
+                            {
+                                uniqueConnection.Open();
+
+                                var uniqueKeysQuery = $@"
+                            SELECT 
+                                conname, 
+                                pg_catalog.pg_get_constraintdef(r.oid) 
+                            FROM 
+                                pg_catalog.pg_constraint r
+                                INNER JOIN pg_catalog.pg_namespace n ON n.oid = r.connamespace
+                            WHERE 
+                                contype = 'u'
+                                AND conrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = '{tableName}')
+                                AND n.nspname = 'public'";
+
+                                using (var uniqueCmd = new NpgsqlCommand(uniqueKeysQuery, uniqueConnection))
+                                using (var uniqueReader = uniqueCmd.ExecuteReader())
+                                {
+                                    while (uniqueReader.Read())
+                                    {
+                                        var constraintName = uniqueReader.GetString(0);
+                                        var constraintDef = uniqueReader.GetString(1);
+                                        scriptBuilder.AppendLine($",    CONSTRAINT {constraintName} {constraintDef}");
+                                    }
+                                }
+                            }
+
+                            // Add Check Constraints
+                            using (var checkConnection = new NpgsqlConnection(conn))
+                            {
+                                checkConnection.Open();
+
+                                var checkConstraintsQuery = $@"
+                            SELECT 
+                                conname, 
+                                pg_catalog.pg_get_constraintdef(r.oid) 
+                            FROM 
+                                pg_catalog.pg_constraint r
+                                INNER JOIN pg_catalog.pg_namespace n ON n.oid = r.connamespace
+                            WHERE 
+                                contype = 'c'
+                                AND conrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = '{tableName}')
+                                AND n.nspname = 'public'";
+
+                                using (var checkCmd = new NpgsqlCommand(checkConstraintsQuery, checkConnection))
+                                using (var checkReader = checkCmd.ExecuteReader())
+                                {
+                                    while (checkReader.Read())
+                                    {
+                                        var constraintName = checkReader.GetString(0);
+                                        var constraintDef = checkReader.GetString(1);
+                                        scriptBuilder.AppendLine($",    CONSTRAINT {constraintName} {constraintDef}");
+                                    }
+                                }
+                            }
 
                             scriptBuilder.AppendLine();
                             scriptBuilder.AppendLine(");");
