@@ -48,7 +48,7 @@ namespace InventorySystem_Infrastructure.TableConfiguration
 
             builder.Property(p => p.IsActive)
                 .HasColumnName("is_active")
-                .HasDefaultValue(true);
+                .HasDefaultValue(false);
 
             builder.Property(p => p.CreatedAt)
                 .HasColumnName("created_at")

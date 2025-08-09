@@ -9,7 +9,7 @@ public class Product
     public decimal SalesPrice { get; set; }
     public int Quantity { get; set; }
     public decimal LandingPrice { get; set; }
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public int CreatedBy { get; set; }
     public DateTime? ModifiedAt { get; set; }
@@ -24,7 +24,7 @@ public class Product
 
     public static Product Create( string productName, int productCategoryId,
         string? description, decimal mrp, decimal salesPrice, int quantity,
-        decimal landingPrice, int createdBy)
+        decimal landingPrice, int createdBy, bool isActive)
     {
         return new Product
         {
@@ -35,7 +35,7 @@ public class Product
             SalesPrice = salesPrice,
             Quantity = quantity,
             LandingPrice = landingPrice,
-            IsActive = true,
+            IsActive = isActive,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = createdBy
         };

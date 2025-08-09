@@ -24,11 +24,11 @@ internal sealed class GetCompaniesQueryHandler : IRequestHandler<GetCompaniesQue
                 c.CompanyName,
                 c.Description ?? string.Empty,
                 c.IsActive,
-                c.RowVersion,c.CreatedAt,
+                c.RowVersion, c.CreatedAt,
                 c.CreatedByUser.UserName
             )).ToListAsync(cancellationToken);
 
-        return Result<IReadOnlyList<GetCompaniesQueryResponse>>.Success(companies);
+        return Result<IReadOnlyList<GetCompaniesQueryResponse>>.Success(companies.OrderBy(a => a.CompanyName).ToList());
     }
 
 }

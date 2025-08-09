@@ -27,6 +27,6 @@ internal sealed class GetCategoriesQueryHandler
             ))
             .ToListAsync(cancellationToken);
 
-        return Result<IReadOnlyList<GetCategoriesQueryResponse>>.Success(companyCategories);
+        return Result<IReadOnlyList<GetCategoriesQueryResponse>>.Success(companyCategories.OrderBy(a => a.CategoryName).ToList());
     }
 }
