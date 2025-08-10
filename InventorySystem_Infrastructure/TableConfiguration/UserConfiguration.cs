@@ -39,6 +39,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         entity.Property(e => e.CreatedDate).HasColumnName("created_date").IsRequired();
         entity.Property(e => e.ModifiedBy).HasColumnName("modified_by");
         entity.Property(e => e.ModifiedDate).HasColumnName("modified_date");
+        entity.Property(e => e.RefreshToken).HasColumnName("refresh_token").HasMaxLength(250); 
+        entity.Property(e => e.RefreshTokenExpiry).HasColumnName("refresh_token_expiry");
         entity.Property(c => c.RowVersion).IsRowVersion();
     }
 }

@@ -49,7 +49,45 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSection["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
         };
+
+        // Custom error handling for unauthorized access
+        options.Events = new JwtBearerEvents
+        {
+            // This event is triggered when authentication fails (e.g., expired token)
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception is SecurityTokenExpiredException)
+                {
+                    context.Response.Headers.Add("Token-Expired", "true");
+                }
+                return Task.CompletedTask;
+            },
+
+            // This event is triggered when the user is not authorized (i.e., missing/invalid token)
+            OnChallenge = async context =>
+            {
+                // Set the response status code to 401 (Unauthorized)
+                context.Response.StatusCode = 401;
+
+                // Set the content type to application/json
+                context.Response.ContentType = "application/json";
+
+                // Write the custom response with Result<T> structure
+                var result = new
+                {
+                    IsSuccess = false,
+                    Error = "Token has expired or is invalid."
+                };
+
+                // Writing the response asynchronously
+                await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(result));
+            }
+        };
     });
+
+
+
+
 
 builder.Services.AddAuthorization(options =>
 {

@@ -18,6 +18,8 @@ public class User
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public int? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiry { get; set; }
     public uint RowVersion { get; }
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<UserMenuPermission> UserMenuPermissions { get; set; } = new List<UserMenuPermission>();
@@ -61,5 +63,11 @@ public class User
         PasswordHash = password;
         PasswordLastChanged = DateTime.UtcNow;
         IsPasswordExpired = false;
+    }
+
+    public void UpdateRefreshToken(string refreshToken)
+    {
+        RefreshToken = refreshToken;
+        RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(30);
     }
 }

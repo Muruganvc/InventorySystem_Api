@@ -2,4 +2,4 @@
 
 namespace InventorySystem_Application.Users.LoginCommand;
 public record LoginCommandResponse(int UserId, string FirstName, string LastName, string Email, string UserName, string Token,
-    GetInventoryCompanyInfoQueryResponse? InvCompanyInfo);
+    GetInventoryCompanyInfoQueryResponse? InvCompanyInfo, string RefreshToken);

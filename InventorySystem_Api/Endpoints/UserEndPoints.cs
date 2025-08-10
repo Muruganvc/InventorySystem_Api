@@ -155,6 +155,21 @@ public static class UserEndPoints
         })
         .Produces<IResult<LoginCommandResponse>>(StatusCodes.Status200OK);
 
+        app.MapPost("/refresh-token/{refreshToken}", async (string refreshToken, IMediator mediator) =>
+        {
+            var result = await mediator.Send(new RefreshTokenCommand(refreshToken));
+            return Results.Ok(result);
+        })
+         .WithMetadata(new AllowAnonymousAttribute())  
+         .WithName("RefreshToken")  
+         .WithOpenApi(operation =>
+         {
+             operation.Summary = "Refresh JWT token";  
+             operation.Description = "Authenticates the user based on the provided refresh token and returns a new JWT token along with user role information."; // Description for OpenAPI documentation
+             return operation;
+         })
+         .Produces<IResult<LoginCommandResponse>>(StatusCodes.Status200OK);  
+
         app.MapPut("/change-password/{userId}", async (int userId, [FromBody] ChangePasswordRequest request, IMediator mediator) =>
         {
             var result = await mediator.Send(new PasswordChangeCommand(userId, request.CurrentPassword, request.PasswordHash));

@@ -5,15 +5,15 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 
 namespace InventorySystem_Application.Users.LoginCommand;
-internal sealed class LoginCommandHandler
-    : IRequestHandler<LoginCommand, IResult<LoginCommandResponse>>
+internal sealed class RefreshTokenCommandHandler
+    : IRequestHandler<RefreshTokenCommand, IResult<LoginCommandResponse>>
 {
     private readonly IRepository<InventorySystem_Domain.User> _userRepository;
     private readonly IRepository<InventorySystem_Domain.UserRole> _userRoleRepository;
     private readonly IRepository<InventorySystem_Domain.Role> _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
-    public LoginCommandHandler(
+    public RefreshTokenCommandHandler(
         IRepository<InventorySystem_Domain.User> userRepository,
         IConfiguration configuration,
         IRepository<InventorySystem_Domain.UserRole> userRoleRepository,
@@ -26,10 +26,10 @@ internal sealed class LoginCommandHandler
         _roleRepository = roleRepository;
         _configuration = configuration;
     }
-    public async Task<IResult<LoginCommandResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<IResult<LoginCommandResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         var (Error, Response) = await new LoginAndRefreshToken(_userRepository, _configuration, _userRoleRepository, _unitOfWork, _roleRepository)
-             .GetLoginAndRefreshTokenAsync(request.UserName, request.Password, true, string.Empty, cancellationToken);
+            .GetLoginAndRefreshTokenAsync(string.Empty,string.Empty, false, request.RefreshToken, cancellationToken);
 
         if (Response != null)
         {
