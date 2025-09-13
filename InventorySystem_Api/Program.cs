@@ -111,12 +111,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCustomSwagger();
 
 var app = builder.Build();
-
+app.UseCors("AllowFrontend");
 app.UseGlobalExceptionHandler();
-
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
