@@ -1,4 +1,5 @@
 ﻿using InventorySystem_Domain;
+using InventorySystem_Domain.Common;
 using InventorySystem_Infrastructure.TableConfiguration;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -6,9 +7,11 @@ using System.Text.Json;
 namespace InventorySystem_Infrastructure;
 public class InventorySystemDbContext : DbContext
 {
-    public InventorySystemDbContext(DbContextOptions<InventorySystemDbContext> options)
+    private readonly IUserInfo _userInfo;
+    public InventorySystemDbContext(DbContextOptions<InventorySystemDbContext> options, IUserInfo userInfo)
        : base(options)
     {
+        _userInfo = userInfo;
     }
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -45,7 +48,7 @@ public class InventorySystemDbContext : DbContext
                 TableName = entry.Entity.GetType().Name,
                 Action = entry.State.ToString(),
                 ChangedAt = DateTime.UtcNow,
-                ChangedBy = "Muruganvc"
+                ChangedBy = _userInfo.UserName
             };
 
             var keyValues = entry.Properties
