@@ -21,10 +21,11 @@ public class Product
     public User? ModifiedByUser { get; set; }
     public uint RowVersion { get; }
     public ICollection<OrderItem>? OrderItems { get; set; }
+    public string? Length { get; set; }
 
     public static Product Create( string productName, int productCategoryId,
         string? description, decimal mrp, decimal salesPrice, int quantity,
-        decimal landingPrice, int createdBy, bool isActive)
+        decimal landingPrice, int createdBy, bool isActive, string length)
     {
         return new Product
         {
@@ -37,11 +38,12 @@ public class Product
             LandingPrice = landingPrice,
             IsActive = isActive,
             CreatedAt = DateTime.UtcNow,
-            CreatedBy = createdBy
+            CreatedBy = createdBy,
+            Length = length
         };
     }
     public void Update( string productName, int productCategoryId, string? description,
-        decimal mrp, decimal salesPrice, int quantity, decimal landingPrice, bool isActive, int updatedBy)
+        decimal mrp, decimal salesPrice, int quantity, decimal landingPrice, bool isActive, int updatedBy, string length)
     {
         ProductName = productName;
         ProductCategoryId = productCategoryId;
@@ -53,6 +55,7 @@ public class Product
         IsActive = isActive;
         ModifiedAt = DateTime.UtcNow;
         ModifiedBy = updatedBy;
+        Length = length;
     }
 
     public void SetActiveInactive(int modifiedBy)

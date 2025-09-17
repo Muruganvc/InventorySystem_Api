@@ -15,4 +15,5 @@ public record GetProductsQueryResponse(int ProductId,
     int Quantity,
     bool IsActive,
     string CreatedBy,
-    uint RowVersion);
+    uint RowVersion,
+    string Length);

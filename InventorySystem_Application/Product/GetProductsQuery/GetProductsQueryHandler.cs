@@ -47,7 +47,8 @@ internal sealed class GetProductsQueryHandler
                 p.Quantity,
                 p.IsActive,
                 p.CreatedByUser.UserName,
-                p.RowVersion
+                p.RowVersion,
+                p.Length
             ))
             .ToListAsync(cancellationToken);
 

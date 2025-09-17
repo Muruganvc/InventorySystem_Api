@@ -29,7 +29,7 @@ internal sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProduc
 
 
         product.Update(request.ProductName, request.ProductCategoryId, request.Description, request.Mrp, request.SalesPrice, request.Quantity,
-            request.LandingPrice, request.IsActive, _userInfo.UserId);
+            request.LandingPrice, request.IsActive, _userInfo.UserId,request.Length);
      
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {

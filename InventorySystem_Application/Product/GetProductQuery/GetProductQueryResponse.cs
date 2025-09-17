@@ -11,4 +11,5 @@ public record GetProductQueryResponse(
     decimal LandingPrice,
     int Quantity,
     bool IsActive,
-    string UserName);
+    string UserName,
+    string Length);

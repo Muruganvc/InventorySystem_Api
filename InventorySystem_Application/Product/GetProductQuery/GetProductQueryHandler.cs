@@ -24,14 +24,15 @@ internal sealed class GetProductQueryHandler
                          p.ProductId,
                          p.ProductName,
                          p.ProductCategory!.CategoryId,
-                         p.ProductCategory.ProductCategoryName,
+                         p.ProductCategory.ProductCategoryName ?? "N/A",
                          p.Description,
                          p.MRP,
                          p.SalesPrice,
                          p.LandingPrice,
                          p.Quantity,
                          p.IsActive,
-                         p.CreatedByUser.UserName
+                         p.CreatedByUser.UserName,
+                         p.Length
      ))
      .FirstOrDefaultAsync(cancellationToken);
 

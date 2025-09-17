@@ -2,4 +2,4 @@
 public record UpdateProductRequest(int ProductId, string ProductName, int ProductCategoryId,
     string? Description, decimal Mrp, decimal SalesPrice, int Quantity,
     decimal LandingPrice,
-    bool IsActive,uint RowVersion);
+    bool IsActive,uint RowVersion, string Length);
