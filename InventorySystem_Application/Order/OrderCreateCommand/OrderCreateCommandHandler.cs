@@ -2,7 +2,6 @@
 using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
-using System.Diagnostics.Metrics;
 
 namespace InventorySystem_Application.Order.OrderCreateCommand;
 internal sealed class OrderCreateCommandHandler
@@ -71,7 +70,6 @@ internal sealed class OrderCreateCommandHandler
                 };
             }).ToList();
 
-
             await _unitOfWork.Repository<OrderItem>().AddRangeAsync(orderItems);
             await _unitOfWork.SaveAsync();
             foreach (var item in orderItems)
@@ -87,7 +85,7 @@ internal sealed class OrderCreateCommandHandler
                     if (product.Meter >= item.Meter)
                     {
                         product.Meter -= item.Meter;
-                        product.ModifiedBy = 1;
+                        product.ModifiedBy = _userInfo.UserId;
                     }
                     else
                     {
@@ -99,7 +97,7 @@ internal sealed class OrderCreateCommandHandler
                     if (product.Quantity >= item.Quantity)
                     {
                         product.Quantity -= item.Quantity;
-                        product.ModifiedBy = 1;
+                        product.ModifiedBy = _userInfo.UserId;
                     }
                     else
                     {

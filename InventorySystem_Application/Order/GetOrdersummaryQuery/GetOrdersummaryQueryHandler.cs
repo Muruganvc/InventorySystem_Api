@@ -77,7 +77,8 @@ internal sealed class GetOrdersummaryQueryHandler
                         customer.Phone,
                         temp.orderItem.CreatedUser.UserName,
                         temp.orderItem.SerialNo,
-                        temp.order.IsGst
+                        temp.order.IsGst,
+                        temp.orderItem.Meter ?? 0
                     ))
                 .ToListAsync(cancellationToken);
         return Result<IReadOnlyList<GetOrdersummaryQueryResponse>>.Success(resultList.OrderBy(a => a.FullProductName).ToList());

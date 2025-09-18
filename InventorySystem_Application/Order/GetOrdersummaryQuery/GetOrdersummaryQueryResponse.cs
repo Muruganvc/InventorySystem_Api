@@ -17,4 +17,5 @@ public record GetOrdersummaryQueryResponse(int ProductId,
     string Phone,
     string User,
     string? SerialNo,
-    bool IsGst);
+    bool IsGst,
+    int Meter);
