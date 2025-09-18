@@ -32,7 +32,7 @@ internal sealed class GetProductQueryHandler
                          p.Quantity,
                          p.IsActive,
                          p.CreatedByUser.UserName,
-                         p.Length
+                         p.Meter ?? 0
      ))
      .FirstOrDefaultAsync(cancellationToken);
 

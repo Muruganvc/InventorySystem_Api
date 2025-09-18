@@ -27,7 +27,8 @@ public static class OrderEndPoints
                 item.Quantity,
                 item.UnitPrice,
                 item.DiscountPercent,
-                item.SerialNo
+                item.SerialNo,
+                item.Meter
             )).ToList();
 
             var command = new OrderCreateCommand(

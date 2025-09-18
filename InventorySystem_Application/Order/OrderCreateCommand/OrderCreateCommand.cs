@@ -14,7 +14,8 @@ public record OrderItemCommand(
     int Quantity,
     decimal UnitPrice,
     decimal DiscountPercent,
-    string? SerialNo
+    string? SerialNo,
+    int? Meter
 );
 
 public record OrderCreateCommand(CustomerCommand Customer, List<OrderItemCommand> OrderItemRequests, decimal GivenAmount,

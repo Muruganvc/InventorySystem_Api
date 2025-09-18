@@ -8,5 +8,5 @@ public record UpdateProductCommand(int ProductId, string ProductName, int Produc
     decimal LandingPrice,
     bool IsActive,
     uint RowVersion,
-    string Length
+    int Meter
 ) : IRequest<IResult<bool>>;

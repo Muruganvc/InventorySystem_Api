@@ -64,8 +64,8 @@ namespace InventorySystem_Infrastructure.TableConfiguration
             builder.Property(p => p.ModifiedBy)
                 .HasColumnName("modified_by");
 
-            builder.Property(p => p.Length)
-                .HasColumnName("length");
+            builder.Property(p => p.Meter)
+                .HasColumnName("meter");
 
             // Relationships
             builder.HasOne(p => p.ProductCategory)

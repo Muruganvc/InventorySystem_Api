@@ -17,4 +17,5 @@ public class OrderItem
     public Product Product { get; set; } = null!;
     public User CreatedUser { get; set; } = null!;
     public uint RowVersion { get; }
+    public int? Meter { get; set; }
 }

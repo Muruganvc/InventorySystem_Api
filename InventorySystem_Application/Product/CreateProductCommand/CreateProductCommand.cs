@@ -4,6 +4,6 @@ using MediatR;
 namespace InventorySystem_Application.Product.CreateProductCommand;
 public record CreateProductCommand(string ProductName, int ProductCategoryId,
     string? Description, decimal Mrp, decimal SalesPrice, int Quantity, 
-    decimal LandingPrice,string Length,
+    decimal LandingPrice,int Meter,
     bool IsActive = false
 ) : IRequest<IResult<int>>;

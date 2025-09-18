@@ -25,7 +25,7 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
             return Result<int>.Failure("Selected product name already exists.");
 
         var product = InventorySystem_Domain.Product.Create(request.ProductName, request.ProductCategoryId, request.Description,
-            request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, _userInfo.UserId, request.IsActive, request.Length);
+            request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, _userInfo.UserId, request.IsActive, request.Meter);
 
         var productIId = await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {

@@ -18,9 +18,10 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(o => o.ProductId).HasColumnName("product_id").IsRequired();
         builder.Property(o => o.SerialNo).HasColumnName("serial_no");
 
-        builder.Property(o => o.Quantity).HasColumnName("quantity").IsRequired();
+        builder.Property(o => o.Quantity).HasColumnName("quantity").HasDefaultValue(0);
         builder.Property(o => o.UnitPrice).HasColumnName("unit_price").HasColumnType("numeric(18,2)");
         builder.Property(o => o.DiscountPercent).HasColumnName("discount_percent").HasDefaultValue(0);
+        builder.Property(o => o.Meter).HasColumnName("meter").HasDefaultValue(0);
 
         // ✅ Computed columns (PostgreSQL must have these defined as GENERATED ALWAYS)
         builder.Property(o => o.SubTotal)
@@ -30,10 +31,15 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
         builder.Property(o => o.DiscountAmount)
-            .HasColumnName("discount_amount")
-            .HasComputedColumnSql("quantity * unit_price * (discount_percent / 100.0)", stored: true)
-            .ValueGeneratedOnAddOrUpdate()
-            .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+        .HasColumnName("discount_amount")
+        .HasComputedColumnSql(
+            @"CASE 
+            WHEN COALESCE(meter, 0) > 0 THEN 0
+            ELSE COALESCE(quantity, 0) * COALESCE(unit_price, 0) * (COALESCE(discount_percent, 0) / 100.0)
+          END",
+            stored: true)
+        .ValueGeneratedOnAddOrUpdate()
+        .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
         builder.Property(o => o.NetTotal)
             .HasColumnName("net_total")

@@ -2,6 +2,7 @@
 using InventorySystem_Domain;
 using InventorySystem_Domain.Common;
 using MediatR;
+using System.Diagnostics.Metrics;
 
 namespace InventorySystem_Application.Order.OrderCreateCommand;
 internal sealed class OrderCreateCommandHandler
@@ -54,39 +55,64 @@ internal sealed class OrderCreateCommandHandler
             await _unitOfWork.Repository<InventorySystem_Domain.Order>().AddAsync(newOrder);
             await _unitOfWork.SaveAsync();
             // 3. Add Order Items
-            var orderItems = request.OrderItemRequests.Select(item => new OrderItem
+            var orderItems = request.OrderItemRequests.Select(item =>
             {
-                OrderId = newOrder.OrderId,
-                ProductId = item.ProductId,
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                DiscountPercent = item.DiscountPercent,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = _userInfo.UserId,
-                SerialNo = item.SerialNo
+                return new OrderItem
+                {
+                    OrderId = newOrder.OrderId,
+                    ProductId = item.ProductId,
+                    Quantity = item.Meter > 0 ? 0 : item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    DiscountPercent = item.DiscountPercent,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = _userInfo.UserId,
+                    SerialNo = item.SerialNo,
+                    Meter = item.Meter
+                };
             }).ToList();
+
 
             await _unitOfWork.Repository<OrderItem>().AddRangeAsync(orderItems);
             await _unitOfWork.SaveAsync();
             foreach (var item in orderItems)
             {
                 var product = await _productRepository.GetByAsync(p => p.ProductId == item.ProductId);
-                if (product == null) continue;
-                if (product.Quantity >= item.Quantity)
+                if (product == null)
+                    continue;
+
+                bool isMeterBased = item.Meter > 0;
+
+                if (isMeterBased)
                 {
-                    product.Quantity -= item.Quantity;
-                    product.ModifiedBy = 1;
+                    if (product.Meter >= item.Meter)
+                    {
+                        product.Meter -= item.Meter;
+                        product.ModifiedBy = 1;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Insufficient meter stock for ProductId: {item.ProductId}");
+                    }
                 }
                 else
                 {
-                    Console.WriteLine($"Insufficient stock for ProductId: {item.ProductId}"); //Log
+                    if (product.Quantity >= item.Quantity)
+                    {
+                        product.Quantity -= item.Quantity;
+                        product.ModifiedBy = 1;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Insufficient quantity stock for ProductId: {item.ProductId}");
+                    }
                 }
             }
+
             await _unitOfWork.SaveAsync();
 
             // 4. Calculate totals
-            var totalAmount = orderItems.Sum(i => i.Quantity * i.UnitPrice);
-            var finalAmount = orderItems.Sum(i => i.Quantity * i.UnitPrice * (1 - i.DiscountPercent / 100.0m));
+            var totalAmount = orderItems.Sum(i => i.Meter > 0 ? i.Meter * i.UnitPrice : i.Quantity * i.UnitPrice);
+            var finalAmount = orderItems.Sum(i => i.Meter > 0 ? i.Meter * i.UnitPrice * (1 - i.DiscountPercent / 100.0m) : i.Quantity * i.UnitPrice * (1 - i.DiscountPercent / 100.0m));
 
             // 5. Update order totals
             newOrder.TotalAmount = totalAmount;

@@ -26,7 +26,7 @@ public static class ProductEndPoints
                 request.SalesPrice,
                 request.Quantity,
                 request.LandingPrice,
-                request.Length,
+                request.Meter,
                 request.IsActive
             );
 
@@ -57,7 +57,7 @@ public static class ProductEndPoints
                 request.LandingPrice,
                 request.IsActive,
                 request.RowVersion,
-                request.Length
+                request.Meter
             );
 
             var result = await mediator.Send(command);

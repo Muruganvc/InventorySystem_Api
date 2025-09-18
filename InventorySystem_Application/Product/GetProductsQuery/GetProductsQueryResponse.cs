@@ -16,4 +16,4 @@ public record GetProductsQueryResponse(int ProductId,
     bool IsActive,
     string CreatedBy,
     uint RowVersion,
-    string Length);
+    int Meter);

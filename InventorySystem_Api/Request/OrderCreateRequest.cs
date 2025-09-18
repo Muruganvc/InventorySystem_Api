@@ -13,6 +13,7 @@ public class OrderItemRequest
     public decimal UnitPrice { get; set; }
     public decimal DiscountPercent { get; set; }
     public string? SerialNo { get; set; }
+    public int? Meter { get; set; }
 }
 
 public record OrderCreateRequest(CustomerRequest Customer, List<OrderItemRequest> OrderItemRequests, decimal GivenAmount, bool IsGst, string GstNumber);

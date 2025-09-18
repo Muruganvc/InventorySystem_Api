@@ -12,4 +12,4 @@ public record GetProductQueryResponse(
     int Quantity,
     bool IsActive,
     string UserName,
-    string Length);
+    int Meter);
