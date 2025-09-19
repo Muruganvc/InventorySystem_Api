@@ -2,5 +2,5 @@
 using MediatR;
 
 namespace InventorySystem_Application.Product.UpdateProductQuantityCommand;
-public record UpdateProductQuantityCommand(int ProductId, int Quantity,uint RowVersion)
+public record UpdateProductQuantityCommand(int ProductId, int Quantity,int Meter, uint RowVersion)
     :IRequest<IResult<bool>>;

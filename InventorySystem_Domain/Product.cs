@@ -65,9 +65,9 @@ public class Product
         ModifiedAt = DateTime.UtcNow;
     }
 
-    public void QuantityUpdate(int quantity, int modifiedBy)
+    public void QuantityUpdate(int quantity, int meter, int modifiedBy)
     {
-        Quantity = quantity;
+        (Meter, Quantity) = meter > 0 ? (meter, 0) : (0, quantity);
         ModifiedBy = modifiedBy;
         ModifiedAt = DateTime.UtcNow;
     }
