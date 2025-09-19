@@ -108,7 +108,7 @@ public static class ProductEndPoints
         // Update Product Quantity
         app.MapPut("/product/{productId:int}/quantity", async (int productId, [FromBody] UpdateProductQuantityRequest request, IMediator mediator) =>
         {
-            var command = new UpdateProductQuantityCommand(productId, request.Quantity, request.RowVersion);
+            var command = new UpdateProductQuantityCommand(productId, request.Quantity, request.Meter, request.RowVersion);
             var result = await mediator.Send(command);
             return Results.Ok(result);
         }).RequireAuthorization("AdminOnly")

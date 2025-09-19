@@ -26,7 +26,7 @@ internal sealed class UpdateProductQuantityCommandHandler
         if (product.RowVersion != request.RowVersion)
             return Result<bool>.Failure("The product item has been modified by another user. Please reload and try again.");
 
-        product.QuantityUpdate(request.Quantity, _userInfo.UserId);
+        product.QuantityUpdate(request.Quantity, request.Meter, _userInfo.UserId);
         var isSuccess = await _unitOfWork.ExecuteInTransactionAsync<bool>(async () =>
         {
             var affectedRows = await _unitOfWork.SaveAsync();
