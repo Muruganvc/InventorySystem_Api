@@ -28,6 +28,12 @@ internal sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProduc
             return Result<bool>.Failure("The product item has been modified by another user. Please reload and try again.");
 
 
+        if ((request.Quantity > 0 && request.Meter > 0) ||
+            (request.Quantity <= 0 && request.Meter <= 0))
+        {
+            return Result<bool>.Failure("Please enter either Quantity or Meter, not both or none.");
+        }
+
         product.Update(request.ProductName, request.ProductCategoryId, request.Description, request.Mrp, request.SalesPrice, request.Quantity,
             request.LandingPrice, request.IsActive, _userInfo.UserId,request.Meter);
      

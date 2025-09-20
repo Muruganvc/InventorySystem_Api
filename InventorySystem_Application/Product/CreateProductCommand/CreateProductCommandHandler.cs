@@ -24,6 +24,12 @@ internal sealed class CreateProductCommandHandler : IRequestHandler<CreateProduc
         if (isExistProduct is not null)
             return Result<int>.Failure("Selected product name already exists.");
 
+        if ((request.Quantity > 0 && request.Meter > 0) ||
+            (request.Quantity <= 0 && request.Meter <= 0))
+        {
+            return Result<int>.Failure("Please enter either Quantity or Meter, not both or none.");
+        }
+
         var product = InventorySystem_Domain.Product.Create(request.ProductName, request.ProductCategoryId, request.Description,
             request.Mrp, request.SalesPrice, request.Quantity, request.LandingPrice, _userInfo.UserId, request.IsActive, request.Meter);
 
