@@ -5,7 +5,7 @@ namespace InventorySystem_Infrastructure.DataBackup
 {
     public static class PostgresBackup
     {
-        public static async Task<StringBuilder> GenerateBackup(
+        public static StringBuilder GenerateBackup(
             //string backupFilePath, 
             string connectionString)
         {
@@ -17,22 +17,47 @@ namespace InventorySystem_Infrastructure.DataBackup
 
                 var scriptBuilder = new StringBuilder();
 
+                scriptBuilder.AppendLine("BEGIN;");
+
                 // Step 1: Generate Table Creation Scripts
-                GenerateTableCreationScripts(connection, scriptBuilder, connectionString);
+                TableCreate(scriptBuilder);
 
-                // Step 2: Generate Index Scripts
-                GenerateIndexScripts(connection, scriptBuilder);
+                //// Step 1: Generate Table Creation Scripts
+                //GenerateTableCreationScripts(connection, scriptBuilder, connectionString);
 
-                // Step 3: Generate Foreign Key Constraints Scripts
-                //GenerateForeignKeyScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
+                //// Step 2: Generate Index Scripts
+                //GenerateIndexScripts(connection, scriptBuilder);
 
-                await GenerateFKAndCompositePKScriptsAsync(connection, scriptBuilder, connectionString);
+                //// Step 3: Generate Foreign Key Constraints Scripts
+                ////GenerateForeignKeyScriptsAsync(connection, scriptBuilder, connectionString).GetAwaiter().GetResult();
+
+                //await GenerateFKAndCompositePKScriptsAsync(connection, scriptBuilder, connectionString);
 
                 // Step 4: Generate Primary Key Constraints Scripts (after foreign key constraints)
                 //GeneratePrimaryKeyScripts(connectionString, scriptBuilder);  // Ensure this is done sequentially
 
                 // Step 5: Generate Insert Scripts for Data
                 GenerateInsertScripts(connection, scriptBuilder, connectionString);
+                scriptBuilder.AppendLine();
+                scriptBuilder.AppendLine("-- ======================");
+                scriptBuilder.AppendLine("-- Align all identity sequences");
+                scriptBuilder.AppendLine("-- ======================");
+                scriptBuilder.AppendLine(@"DO $$
+                    DECLARE
+                        rec RECORD;
+                                BEGIN
+                                    FOR rec IN  SELECT table_name, column_name
+                                    FROM information_schema.columns WHERE is_identity = 'YES' AND table_schema = 'public'
+                                LOOP
+                                    EXECUTE format(
+                                        'SELECT setval(pg_get_serial_sequence(''%I.%I'', ''%I''), COALESCE((SELECT MAX(%I) FROM %I.%I),1))',
+                                        'public', rec.table_name, rec.column_name, rec.column_name, 'public', rec.table_name);
+                                END LOOP;
+                    END $$;");
+
+                Order_ItemsAlter(scriptBuilder);
+
+                scriptBuilder.AppendLine("COMMIT;");
 
                 // Save to file
                 //File.WriteAllText(backupFilePath, scriptBuilder.ToString());
@@ -44,6 +69,528 @@ namespace InventorySystem_Infrastructure.DataBackup
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return null;
             }
+        }
+
+
+        static void TableCreate(StringBuilder createScript)
+        {
+            // All your table creation scripts combined
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.users");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- Drop existing table if needed");
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.users;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.users");
+            createScript.AppendLine("(");
+            createScript.AppendLine("user_id                INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("first_name             CHARACTER VARYING(30) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("last_name              CHARACTER VARYING(30) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("user_name              CHARACTER VARYING(30) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("password_hash          CHARACTER VARYING(256) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("email                  CHARACTER VARYING(150) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("is_active              BOOLEAN NOT NULL DEFAULT TRUE,");
+            createScript.AppendLine("password_last_changed  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("password_expires_at    TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS((password_last_changed + '30 days'::interval)) STORED,");
+            createScript.AppendLine("is_password_expired    BOOLEAN NOT NULL DEFAULT FALSE,");
+            createScript.AppendLine("last_login             TIMESTAMP WITHOUT TIME ZONE,");
+            createScript.AppendLine("mobile_no              CHARACTER VARYING(10) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("profile_image          BYTEA,");
+            createScript.AppendLine("created_by             INTEGER NOT NULL,");
+            createScript.AppendLine("created_date           TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("modified_by            INTEGER,");
+            createScript.AppendLine("modified_date          TIMESTAMP WITHOUT TIME ZONE,");
+            createScript.AppendLine("refresh_token          CHARACTER VARYING(255) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("refresh_token_expiry   TIMESTAMP WITH TIME ZONE,");
+            createScript.AppendLine("CONSTRAINT users_pkey PRIMARY KEY (user_id),");
+            createScript.AppendLine("CONSTRAINT users_user_name_key UNIQUE (user_name))TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_users_user_id");
+            createScript.AppendLine("ON public.users USING btree (user_id ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.roles");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.roles;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.roles");
+            createScript.AppendLine("(");
+            createScript.AppendLine("role_id    INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("role_name  CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("role_code  CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("is_active  BOOLEAN NOT NULL DEFAULT TRUE,");
+            createScript.AppendLine("CONSTRAINT roles_pkey PRIMARY KEY (role_id),");
+            createScript.AppendLine("CONSTRAINT roles_role_code_key UNIQUE (role_code),");
+            createScript.AppendLine("CONSTRAINT roles_role_name_key UNIQUE (role_name)");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.user_roles");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.user_roles;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.user_roles");
+            createScript.AppendLine("(");
+            createScript.AppendLine("user_id  INTEGER NOT NULL,");
+            createScript.AppendLine("role_id  INTEGER NOT NULL,");
+            createScript.AppendLine("CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, role_id),");
+            createScript.AppendLine("CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id)");
+            createScript.AppendLine("REFERENCES public.roles (role_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE,");
+            createScript.AppendLine("CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.menu_items");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.menu_items;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.menu_items");
+            createScript.AppendLine("(");
+            createScript.AppendLine("menu_items_id INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("label         CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("icon          CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("route         CHARACTER VARYING(200) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("parent_id     INTEGER,");
+            createScript.AppendLine("order_by      INTEGER NOT NULL DEFAULT 0,");
+            createScript.AppendLine("CONSTRAINT menu_items_pkey PRIMARY KEY (menu_items_id),");
+            createScript.AppendLine("CONSTRAINT fk_menuitems_parent FOREIGN KEY (parent_id)");
+            createScript.AppendLine("REFERENCES public.menu_items (menu_items_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE SET NULL");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.user_menu_permissions");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.user_menu_permissions;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.user_menu_permissions");
+            createScript.AppendLine("(");
+            createScript.AppendLine("user_menu_permission_id INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("user_id                 INTEGER NOT NULL,");
+            createScript.AppendLine("menu_item_id            INTEGER NOT NULL,");
+            createScript.AppendLine("order_by                INTEGER NOT NULL DEFAULT 0,");
+            createScript.AppendLine("CONSTRAINT user_menu_permissions_pkey PRIMARY KEY (user_menu_permission_id),");
+            createScript.AppendLine("CONSTRAINT uq_user_menu UNIQUE (user_id, menu_item_id),");
+            createScript.AppendLine("CONSTRAINT user_menu_permissions_menu_item_id_fkey FOREIGN KEY (menu_item_id)");
+            createScript.AppendLine("REFERENCES public.menu_items (menu_items_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE,");
+            createScript.AppendLine("CONSTRAINT user_menu_permissions_user_id_fkey FOREIGN KEY (user_id)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.audit_logs");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.audit_logs;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.audit_logs");
+            createScript.AppendLine("(");
+            createScript.AppendLine("audit_log_id INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("table_name   CHARACTER VARYING(100) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("action       CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("key_values   TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("old_values   TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("new_values   TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("changed_by   CHARACTER VARYING(100) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("changed_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("CONSTRAINT audit_logs_pkey PRIMARY KEY (audit_log_id)");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.company");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.company;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.company");
+            createScript.AppendLine("(");
+            createScript.AppendLine("company_id    INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("company_name  CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("description   TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("is_active     BOOLEAN DEFAULT FALSE,");
+            createScript.AppendLine("created_at    TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by    INTEGER NOT NULL,");
+            createScript.AppendLine("modified_at   TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("modified_by   INTEGER,");
+            createScript.AppendLine("CONSTRAINT company_pkey PRIMARY KEY (company_id),");
+            createScript.AppendLine("CONSTRAINT fk_company_created_by FOREIGN KEY (created_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_company_modified_by FOREIGN KEY (modified_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.category");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.category;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.category");
+            createScript.AppendLine("(");
+            createScript.AppendLine("category_id    INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("category_name  CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("company_id     INTEGER,");
+            createScript.AppendLine("description    TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("is_active      BOOLEAN DEFAULT FALSE,");
+            createScript.AppendLine("created_at     TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by     INTEGER NOT NULL,");
+            createScript.AppendLine("modified_at    TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("modified_by    INTEGER,");
+            createScript.AppendLine("CONSTRAINT category_pkey PRIMARY KEY (category_id),");
+            createScript.AppendLine("CONSTRAINT fk_category_company FOREIGN KEY (company_id)");
+            createScript.AppendLine("REFERENCES public.company (company_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_category_createdby FOREIGN KEY (created_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_category_modifiedby FOREIGN KEY (modified_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Indexes");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_category_category_id_and_company_id");
+            createScript.AppendLine("ON public.category USING btree (category_id ASC NULLS LAST, company_id ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_category_company_id");
+            createScript.AppendLine("ON public.category USING btree (company_id ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.product_category");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.product_category;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.product_category");
+            createScript.AppendLine("(");
+            createScript.AppendLine("product_category_id   INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("product_category_name CHARACTER VARYING(100) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("category_id           INTEGER NOT NULL,");
+            createScript.AppendLine("description           TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("is_active             BOOLEAN DEFAULT FALSE,");
+            createScript.AppendLine("created_at            TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by            INTEGER NOT NULL,");
+            createScript.AppendLine("modified_at           TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("modified_by           INTEGER,");
+            createScript.AppendLine("CONSTRAINT product_category_pkey PRIMARY KEY (product_category_id),");
+            createScript.AppendLine("CONSTRAINT fk_productcategory_category FOREIGN KEY (category_id)");
+            createScript.AppendLine("REFERENCES public.category (category_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_productcategory_createdby FOREIGN KEY (created_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_productcategory_modifiedby FOREIGN KEY (modified_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Indexes");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_product_category_category_id");
+            createScript.AppendLine("ON public.product_category USING btree (category_id ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.product");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.product;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.product");
+            createScript.AppendLine("(");
+            createScript.AppendLine("product_id          INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED BY DEFAULT AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("product_name        CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("product_category_id INTEGER,");
+            createScript.AppendLine("description         TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("mrp                 NUMERIC(10,2) NOT NULL,");
+            createScript.AppendLine("sales_price         NUMERIC(10,2) NOT NULL,");
+            createScript.AppendLine("quantity            INTEGER NOT NULL,");
+            createScript.AppendLine("landing_price       NUMERIC(18,2) NOT NULL DEFAULT 18.00,");
+            createScript.AppendLine("is_active           BOOLEAN DEFAULT FALSE,");
+            createScript.AppendLine("created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by          INTEGER NOT NULL,");
+            createScript.AppendLine("modified_at         TIMESTAMP WITHOUT TIME ZONE,");
+            createScript.AppendLine("modified_by         INTEGER,");
+            createScript.AppendLine("meter               INTEGER,");
+            createScript.AppendLine("CONSTRAINT product_pkey PRIMARY KEY (product_id),");
+            createScript.AppendLine("CONSTRAINT product_product_name_key UNIQUE (product_name),");
+            createScript.AppendLine("CONSTRAINT fk_created_by FOREIGN KEY (created_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_modified_by FOREIGN KEY (modified_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_product_category FOREIGN KEY (product_category_id)");
+            createScript.AppendLine("REFERENCES public.product_category (product_category_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE NO ACTION");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Indexes");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_product_created_by");
+            createScript.AppendLine("ON public.product USING btree (created_by ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_product_product_category_and_category_id");
+            createScript.AppendLine("ON public.product USING btree (product_category_id ASC NULLS LAST, created_by ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+            createScript.AppendLine("CREATE INDEX IF NOT EXISTS idx_product_product_category_id");
+            createScript.AppendLine("ON public.product USING btree (product_category_id ASC NULLS LAST)");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.customers");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.customers;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.customers");
+            createScript.AppendLine("(");
+            createScript.AppendLine("customer_id   INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("customer_name CHARACTER VARYING(200) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("phone         CHARACTER VARYING(20) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("address       TEXT COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("is_active     BOOLEAN DEFAULT TRUE,");
+            createScript.AppendLine("created_at    TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("CONSTRAINT customers_pkey PRIMARY KEY (customer_id)");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.orders");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.orders;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.orders");
+            createScript.AppendLine("(");
+            createScript.AppendLine("order_id      INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("customer_id   INTEGER NOT NULL,");
+            createScript.AppendLine("order_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("total_amount  NUMERIC(18,2),");
+            createScript.AppendLine("final_amount  NUMERIC(18,2),");
+            createScript.AppendLine("balance_amount NUMERIC(18,2),");
+            createScript.AppendLine("is_gst        BOOLEAN NOT NULL DEFAULT FALSE,");
+            createScript.AppendLine("gst_number CHARACTER VARYING(15) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("CONSTRAINT orders_pkey PRIMARY KEY (order_id),");
+            createScript.AppendLine("CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id)");
+            createScript.AppendLine("REFERENCES public.customers (customer_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.order_items");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.order_items;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.order_items");
+            createScript.AppendLine("(");
+            createScript.AppendLine("order_item_id   INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("(INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("order_id        INTEGER NOT NULL,");
+            createScript.AppendLine("product_id      INTEGER NOT NULL,");
+            createScript.AppendLine("serial_no       CHARACTER VARYING(15) COLLATE pg_catalog.\"default\",");
+            createScript.AppendLine("quantity        INTEGER NOT NULL DEFAULT 0,");
+            createScript.AppendLine("unit_price      NUMERIC(18,2) NOT NULL,");
+            createScript.AppendLine("discount_percent NUMERIC(5,2) DEFAULT 0,");
+            createScript.AppendLine("created_at      TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by      INTEGER NOT NULL,");
+            createScript.AppendLine("sub_total       NUMERIC GENERATED ALWAYS AS ((quantity::NUMERIC * unit_price)) STORED,");
+            createScript.AppendLine("discount_amount NUMERIC GENERATED ALWAYS AS ((quantity::NUMERIC * unit_price * (discount_percent / 100.0))) STORED,");
+            createScript.AppendLine("net_total       NUMERIC GENERATED ALWAYS AS ((quantity::NUMERIC * unit_price * (1 - (discount_percent / 100.0)))) STORED,");
+            createScript.AppendLine("meter           INTEGER,");
+            createScript.AppendLine("CONSTRAINT order_items_pkey PRIMARY KEY (order_item_id),");
+            createScript.AppendLine("CONSTRAINT fk_order_items_orders FOREIGN KEY (order_id)");
+            createScript.AppendLine("REFERENCES public.orders (order_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE CASCADE,");
+            createScript.AppendLine("CONSTRAINT fk_order_items_product FOREIGN KEY (product_id)");
+            createScript.AppendLine("REFERENCES public.product (product_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE RESTRICT,");
+            createScript.AppendLine("CONSTRAINT fk_order_items_users FOREIGN KEY (created_by)");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION");
+            createScript.AppendLine("ON DELETE RESTRICT,");
+            createScript.AppendLine("CONSTRAINT order_items_quantity_check CHECK (");
+            createScript.AppendLine("(meter > 0 AND quantity = 0) OR (COALESCE(meter, 0) <= 0 AND quantity > 0)");
+            createScript.AppendLine(")");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.inventory_company_info");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.inventory_company_info;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.inventory_company_info");
+            createScript.AppendLine("(");
+            createScript.AppendLine("inventory_company_info_id   INTEGER NOT NULL ");
+            createScript.AppendLine("GENERATED ALWAYS AS IDENTITY ");
+            createScript.AppendLine("   (INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1),");
+            createScript.AppendLine("inventory_company_info_name CHARACTER VARYING(100) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("description                 CHARACTER VARYING(150) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("address                     CHARACTER VARYING(250) COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("mobile_no                   CHARACTER VARYING(10)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("email                       CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("gst_number                  CHARACTER VARYING(15)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("bank_name                   CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("bank_branch_name            CHARACTER VARYING(50)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("bank_account_no             CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("bank_branch_ifsc            CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("api_version                 CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("ui_version                  CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
+            createScript.AppendLine("qr_code                     BYTEA NOT NULL,");
+            createScript.AppendLine("is_active                   BOOLEAN NOT NULL DEFAULT FALSE,");
+            createScript.AppendLine("CONSTRAINT inventory_company_info_pkey PRIMARY KEY (inventory_company_info_id)");
+            createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+        }
+
+        static void Order_ItemsAlter(StringBuilder alterScript)
+        {
+            alterScript.AppendLine("-- ====================================================");
+            alterScript.AppendLine("-- 🔄 Update generated columns for order_items (No direct drop until rename)");
+            alterScript.AppendLine("-- ====================================================");
+
+            alterScript.AppendLine("-- 1️⃣ Add new sub_total column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN sub_total_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 THEN quantity::NUMERIC * unit_price");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0)    > 0 THEN meter::NUMERIC * unit_price");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 2️⃣ Add new discount_amount column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN discount_amount_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 ");
+            alterScript.AppendLine("THEN quantity::NUMERIC * unit_price * (discount_percent / 100.0)");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0) > 0 ");
+            alterScript.AppendLine("THEN meter::NUMERIC * unit_price * (discount_percent / 100.0)");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 3️⃣ Add new net_total column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN net_total_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 ");
+            alterScript.AppendLine("THEN quantity::NUMERIC * unit_price * (1 - (discount_percent / 100.0))");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0) > 0 ");
+            alterScript.AppendLine("THEN meter::NUMERIC * unit_price * (1 - (discount_percent / 100.0))");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 4️⃣ Drop old columns");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS sub_total;");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS discount_amount;");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS net_total;");
+
+            alterScript.AppendLine("-- 5️⃣ Rename the new columns to original names");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN sub_total_new TO sub_total;");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN discount_amount_new TO discount_amount;");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN net_total_new TO net_total;");
         }
 
         private static void GenerateTableCreationScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
@@ -654,16 +1201,16 @@ namespace InventorySystem_Infrastructure.DataBackup
                     using var dataCmd = new NpgsqlCommand(dataQuery, newConnection);
                     using var dataReader = dataCmd.ExecuteReader();
                     {
+                        scriptBuilder.AppendLine("SET session_replication_role = replica;");
                         while (dataReader.Read())
                         {
                             var columnCount = dataReader.FieldCount;
                             var columnNames = new List<string>();
                             var columnValues = new List<string>();
-
+                           
                             for (int i = 0; i < columnCount; i++)
                             {
                                 var columnName = dataReader.GetName(i);
-
                                 // Skip auto-generated, computed, and primary key columns (except in the case of "user_roles")
                                 if (tableName == "audit_logs")
                                 {
@@ -672,8 +1219,25 @@ namespace InventorySystem_Infrastructure.DataBackup
                                         continue;
                                     }
                                 }
-
                                 var columnValue = dataReader[i];
+                                var skipColumns = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+                                {
+                                    ["users"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                                                {
+                                                    "password_expires_at"
+                                                },
+                                    ["order_items"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                                                {
+                                                    "sub_total",
+                                                    "discount_amount",
+                                                    "net_total"
+                                                }
+                                };
+
+                                if (skipColumns.TryGetValue(tableName, out var columns) && columns.Contains(columnName))
+                                    continue;
+
+
                                 if (columnValue == DBNull.Value)
                                 {
                                     columnValues.Add("NULL");
@@ -721,6 +1285,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                             //}
                             scriptBuilder.AppendLine($"INSERT INTO {tableName} ({columnNamesString}) OVERRIDING SYSTEM VALUE VALUES ({columnValuesString}) ON CONFLICT DO NOTHING;");
                         }
+                        scriptBuilder.AppendLine("SET session_replication_role = DEFAULT;");
                     }
                 }
             }
