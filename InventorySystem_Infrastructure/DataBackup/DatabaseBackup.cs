@@ -38,7 +38,6 @@ namespace InventorySystem_Infrastructure.DataBackup
 
                 // Step 5: Generate Insert Scripts for Data
                 GenerateInsertScripts(connection, scriptBuilder, connectionString);
-
                 scriptBuilder.AppendLine();
                 scriptBuilder.AppendLine("-- ======================");
                 scriptBuilder.AppendLine("-- Align all identity sequences");
@@ -55,6 +54,8 @@ namespace InventorySystem_Infrastructure.DataBackup
                                         'public', rec.table_name, rec.column_name, rec.column_name, 'public', rec.table_name);
                                 END LOOP;
                     END $$;");
+
+                Order_ItemsAlter(scriptBuilder);
 
                 scriptBuilder.AppendLine("COMMIT;");
 
@@ -538,6 +539,59 @@ namespace InventorySystem_Infrastructure.DataBackup
             createScript.AppendLine("TABLESPACE pg_default;");
         }
 
+        static void Order_ItemsAlter(StringBuilder alterScript)
+        {
+            alterScript.AppendLine("-- ====================================================");
+            alterScript.AppendLine("-- 🔄 Update generated columns for order_items (No direct drop until rename)");
+            alterScript.AppendLine("-- ====================================================");
+
+            alterScript.AppendLine("-- 1️⃣ Add new sub_total column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN sub_total_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 THEN quantity::NUMERIC * unit_price");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0)    > 0 THEN meter::NUMERIC * unit_price");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 2️⃣ Add new discount_amount column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN discount_amount_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 ");
+            alterScript.AppendLine("THEN quantity::NUMERIC * unit_price * (discount_percent / 100.0)");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0) > 0 ");
+            alterScript.AppendLine("THEN meter::NUMERIC * unit_price * (discount_percent / 100.0)");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 3️⃣ Add new net_total column with updated logic");
+            alterScript.AppendLine("ALTER TABLE public.order_items");
+            alterScript.AppendLine("ADD COLUMN net_total_new NUMERIC ");
+            alterScript.AppendLine("GENERATED ALWAYS AS (");
+            alterScript.AppendLine("CASE ");
+            alterScript.AppendLine("WHEN COALESCE(quantity, 0) > 0 ");
+            alterScript.AppendLine("THEN quantity::NUMERIC * unit_price * (1 - (discount_percent / 100.0))");
+            alterScript.AppendLine("WHEN COALESCE(meter, 0) > 0 ");
+            alterScript.AppendLine("THEN meter::NUMERIC * unit_price * (1 - (discount_percent / 100.0))");
+            alterScript.AppendLine("ELSE 0");
+            alterScript.AppendLine("END");
+            alterScript.AppendLine(") STORED;");
+
+            alterScript.AppendLine("-- 4️⃣ Drop old columns");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS sub_total;");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS discount_amount;");
+            alterScript.AppendLine("ALTER TABLE public.order_items DROP COLUMN IF EXISTS net_total;");
+
+            alterScript.AppendLine("-- 5️⃣ Rename the new columns to original names");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN sub_total_new TO sub_total;");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN discount_amount_new TO discount_amount;");
+            alterScript.AppendLine("ALTER TABLE public.order_items RENAME COLUMN net_total_new TO net_total;");
+        }
 
         private static void GenerateTableCreationScripts(NpgsqlConnection connection, StringBuilder scriptBuilder, string conn)
         {

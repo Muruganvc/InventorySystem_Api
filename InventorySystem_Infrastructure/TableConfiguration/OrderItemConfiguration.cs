@@ -24,28 +24,49 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(o => o.Meter).HasColumnName("meter").HasDefaultValue(0);
 
         // ✅ Computed columns (PostgreSQL must have these defined as GENERATED ALWAYS)
+        // ✅ SubTotal: Use quantity if present, otherwise meter
         builder.Property(o => o.SubTotal)
             .HasColumnName("sub_total")
-            .HasComputedColumnSql("quantity * unit_price", stored: true)
+            .HasComputedColumnSql(
+                @"CASE 
+            WHEN COALESCE(quantity, 0) > 0 THEN COALESCE(quantity, 0) * COALESCE(unit_price, 0)
+            WHEN COALESCE(meter, 0)    > 0 THEN COALESCE(meter, 0)    * COALESCE(unit_price, 0)
+            ELSE 0 
+          END",
+                stored: true)
             .ValueGeneratedOnAddOrUpdate()
             .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
+        // ✅ DiscountAmount: Calculate discount based on whichever input has value
         builder.Property(o => o.DiscountAmount)
-        .HasColumnName("discount_amount")
-        .HasComputedColumnSql(
-            @"CASE 
-            WHEN COALESCE(meter, 0) > 0 THEN 0
-            ELSE COALESCE(quantity, 0) * COALESCE(unit_price, 0) * (COALESCE(discount_percent, 0) / 100.0)
+            .HasColumnName("discount_amount")
+            .HasComputedColumnSql(
+                @"CASE 
+            WHEN COALESCE(quantity, 0) > 0 
+                THEN COALESCE(quantity, 0) * COALESCE(unit_price, 0) * (COALESCE(discount_percent, 0) / 100.0)
+            WHEN COALESCE(meter, 0)    > 0 
+                THEN COALESCE(meter, 0)    * COALESCE(unit_price, 0) * (COALESCE(discount_percent, 0) / 100.0)
+            ELSE 0 
           END",
-            stored: true)
-        .ValueGeneratedOnAddOrUpdate()
-        .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+                stored: true)
+            .ValueGeneratedOnAddOrUpdate()
+            .Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
 
+        // ✅ NetTotal: Use same conditional logic, applying the discount
         builder.Property(o => o.NetTotal)
             .HasColumnName("net_total")
-            .HasComputedColumnSql("quantity * unit_price * (1 - discount_percent / 100.0)", stored: true)
+            .HasComputedColumnSql(
+                @"CASE 
+            WHEN COALESCE(quantity, 0) > 0 
+                THEN COALESCE(quantity, 0) * COALESCE(unit_price, 0) * (1 - COALESCE(discount_percent, 0) / 100.0)
+            WHEN COALESCE(meter, 0)    > 0 
+                THEN COALESCE(meter, 0)    * COALESCE(unit_price, 0) * (1 - COALESCE(discount_percent, 0) / 100.0)
+            ELSE 0 
+          END",
+                stored: true)
             .ValueGeneratedOnAddOrUpdate()
             .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
 
         builder.Property(o => o.CreatedAt)
             .HasColumnName("created_at")
