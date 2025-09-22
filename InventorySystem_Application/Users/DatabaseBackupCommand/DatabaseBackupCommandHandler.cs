@@ -10,7 +10,7 @@ internal sealed class DatabaseBackupCommandHandler
 {
     public async Task<IResult<StringBuilder>> Handle(DatabaseBackupCommand request, CancellationToken cancellationToken)
     {
-        var result = await PostgresBackup.GenerateBackup(request.connectionString);
+        var result = await Task.Run(() => PostgresBackup.GenerateBackup(request.connectionString));
         return Result<StringBuilder>.Success(result);
     }
 }
