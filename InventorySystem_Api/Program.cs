@@ -111,6 +111,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCustomSwagger();
 
 var app = builder.Build();
+app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseGlobalExceptionHandler();
 app.UseAuthentication();
