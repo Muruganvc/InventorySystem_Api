@@ -358,7 +358,7 @@ public static class UserEndPoints
             var sqlContent = await mediator.Send(command);
 
             // Check if the sqlContent is null, and return a BadRequest if so
-            if (string.IsNullOrEmpty(sqlContent.Value.ToString()))
+            if (string.IsNullOrEmpty(sqlContent?.Value?.ToString()))
             {
                 return Results.BadRequest("Failed to generate database backup. The SQL content is empty.");
             }
