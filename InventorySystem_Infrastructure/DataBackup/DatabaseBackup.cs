@@ -1224,13 +1224,17 @@ namespace InventorySystem_Infrastructure.DataBackup
                                 {
                                     ["users"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                                                 {
-                                                    "password_expires_at"
+                                                    "password_expires_at","profile_image"
                                                 },
                                     ["order_items"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                                                 {
                                                     "sub_total",
                                                     "discount_amount",
                                                     "net_total"
+                                                },
+                                    ["inventory_company_info"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                                                {
+                                                    "qr_code"
                                                 }
                                 };
 
