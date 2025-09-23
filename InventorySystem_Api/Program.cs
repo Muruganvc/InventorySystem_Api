@@ -103,7 +103,7 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddCustomCors("https://vennilaelectricals.onrender.com");
+    builder.Services.AddCustomCors("https://vennilaelectricals-qa.onrender.com");
 }
 
 builder.Services.AddEndpointsApiExplorer();
