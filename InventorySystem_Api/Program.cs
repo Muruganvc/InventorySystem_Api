@@ -97,14 +97,15 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SUPERADMIN"));
 });
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddCustomCors("http://localhost:4200");
-}
-else
-{
-    builder.Services.AddCustomCors("https://vennilaelectricals-qa.onrender.com");
-}
+//if (builder.Environment.IsDevelopment())
+//{
+//    builder.Services.AddCustomCors("http://localhost:4200");
+//}
+//else
+//{
+//    builder.Services.AddCustomCors("https://vennilaelectricals-qa.onrender.com");
+//}
+builder.Services.AddCustomCors("https://vennilaelectricals-qa.onrender.com");
 
 builder.Services.AddEndpointsApiExplorer();
 
