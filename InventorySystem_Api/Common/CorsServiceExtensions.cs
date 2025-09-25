@@ -42,7 +42,8 @@ public static class CorsServiceExtensions
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins(origin)         // Ensure the frontend origin is correctly passed (e.g., http://localhost:4200)
+                policy
+                      //.WithOrigins(origin)         // Ensure the frontend origin is correctly passed (e.g., http://localhost:4200)
                       .AllowAnyHeader()           // Allow any headers (adjust as needed)
                       .AllowAnyMethod()           // Allow any HTTP methods (adjust as needed)
                       .AllowCredentials();       // Allow credentials (cookies, authorization tokens)
