@@ -6,11 +6,11 @@ using System.Text;
 namespace InventorySystem_Application.Users.DatabaseBackupCommand;
 internal sealed class DatabaseBackupCommandHandler
 
-    : IRequestHandler<DatabaseBackupCommand, IResult<StringBuilder>>
+    : IRequestHandler<DatabaseBackupCommand, IResult<(StringBuilder script, bool status)>>
 {
-    public async Task<IResult<StringBuilder>> Handle(DatabaseBackupCommand request, CancellationToken cancellationToken)
+    public async Task<IResult<(StringBuilder script, bool status)>> Handle(DatabaseBackupCommand request, CancellationToken cancellationToken)
     {
         var result = await Task.Run(() => PostgresBackup.GenerateBackup(request.connectionString));
-        return Result<StringBuilder>.Success(result);
+        return Result<(StringBuilder script, bool status)>.Success(result);
     }
 }

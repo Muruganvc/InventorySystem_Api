@@ -5,7 +5,7 @@ namespace InventorySystem_Infrastructure.DataBackup
 {
     public static class PostgresBackup
     {
-        public static StringBuilder GenerateBackup(
+        public static (StringBuilder script, bool status) GenerateBackup(
             //string backupFilePath, 
             string connectionString)
         {
@@ -58,16 +58,14 @@ namespace InventorySystem_Infrastructure.DataBackup
                 Order_ItemsAlter(scriptBuilder);
 
                 scriptBuilder.AppendLine("COMMIT;");
-
                 // Save to file
                 //File.WriteAllText(backupFilePath, scriptBuilder.ToString());
                 //Console.WriteLine($"Backup script generated: {backupFilePath}");
-                return scriptBuilder;
+                return (scriptBuilder, true);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                return null;
+                return (new StringBuilder().AppendLine(ex.Message), false);
             }
         }
 
@@ -536,6 +534,27 @@ namespace InventorySystem_Infrastructure.DataBackup
             createScript.AppendLine("is_active                   BOOLEAN NOT NULL DEFAULT FALSE,");
             createScript.AppendLine("CONSTRAINT inventory_company_info_pkey PRIMARY KEY (inventory_company_info_id)");
             createScript.AppendLine(")");
+            createScript.AppendLine("TABLESPACE pg_default;");
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.backup");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.backup;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.backup ");
+            createScript.AppendLine("(backup_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY ");
+            createScript.AppendLine("backup_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("backup_status TEXT NOT NULL CHECK (backup_status IN ('SUCCESS', 'FAILED')),");
+            createScript.AppendLine("error_message TEXT,");
+            createScript.AppendLine("is_active     BOOLEAN DEFAULT FALSE, ");
+            createScript.AppendLine("created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("created_by INTEGER NOT NULL,");
+            createScript.AppendLine("CONSTRAINT fk_backup_created_by F OREIGN KEY (created_by) ");
+            createScript.AppendLine("REFERENCES public.users (user_id)");
+            createScript.AppendLine("ON UPDATE NO ACTION ");
+            createScript.AppendLine("ON DELETE NO ACTION);");
             createScript.AppendLine("TABLESPACE pg_default;");
         }
 
@@ -1207,7 +1226,7 @@ namespace InventorySystem_Infrastructure.DataBackup
                             var columnCount = dataReader.FieldCount;
                             var columnNames = new List<string>();
                             var columnValues = new List<string>();
-                           
+
                             for (int i = 0; i < columnCount; i++)
                             {
                                 var columnName = dataReader.GetName(i);

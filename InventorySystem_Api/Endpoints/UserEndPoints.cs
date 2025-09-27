@@ -1,4 +1,6 @@
 ﻿using InventorySystem_Api.Request;
+using InventorySystem_Application.Backup.BackupCommand;
+using InventorySystem_Application.Backup.GetBackupQuery;
 using InventorySystem_Application.Common;
 using InventorySystem_Application.Customer.GetCustomerQuery;
 using InventorySystem_Application.InventoryCompanyInfo.CreateInventoryCompanyInfoCommand;
@@ -160,15 +162,15 @@ public static class UserEndPoints
             var result = await mediator.Send(new RefreshTokenCommand(refreshToken));
             return Results.Ok(result);
         })
-         .WithMetadata(new AllowAnonymousAttribute())  
-         .WithName("RefreshToken")  
+         .WithMetadata(new AllowAnonymousAttribute())
+         .WithName("RefreshToken")
          .WithOpenApi(operation =>
          {
-             operation.Summary = "Refresh JWT token";  
+             operation.Summary = "Refresh JWT token";
              operation.Description = "Authenticates the user based on the provided refresh token and returns a new JWT token along with user role information."; // Description for OpenAPI documentation
              return operation;
          })
-         .Produces<IResult<LoginCommandResponse>>(StatusCodes.Status200OK);  
+         .Produces<IResult<LoginCommandResponse>>(StatusCodes.Status200OK);
 
         app.MapPut("/change-password/{userId}", async (int userId, [FromBody] ChangePasswordRequest request, IMediator mediator) =>
         {
@@ -349,39 +351,52 @@ public static class UserEndPoints
         .Produces<IResult<GetInventoryCompanyInfoQueryResponse>>(StatusCodes.Status200OK);
 
 
-        app.MapPost("/database-backup", static async (IConfiguration config, IMediator mediator) =>
+        app.MapPost("/database-backup", async ( IConfiguration config, IMediator mediator) =>
         {
-            // Create a new command to trigger the database backup
-            var command = new DatabaseBackupCommand(config.GetConnectionString("DefaultConnection")!);
+            var connectionString = config.GetConnectionString("DefaultConnection");
+            var command = new DatabaseBackupCommand(connectionString!);
 
-            // Execute the command through the mediator to get the SQL content (backup content)
             var sqlContent = await mediator.Send(command);
+            var content = sqlContent.Value.script.ToString();
 
-            // Check if the sqlContent is null, and return a BadRequest if so
-            if (string.IsNullOrEmpty(sqlContent?.Value?.ToString()))
+            if (!sqlContent.Value.status)
             {
-                return Results.BadRequest("Failed to generate database backup. The SQL content is empty.");
+                var failedBackup = new BackupCommand("FAILED", false, content ?? "Unknown error");
+                await mediator.Send(failedBackup);
+                return Results.BadRequest("Failed to generate database backup.");
             }
 
-            // Convert the SQL content to a byte array
-            var bytes = System.Text.Encoding.UTF8.GetBytes(sqlContent.Value.ToString());
+            var successfulBackup = new BackupCommand("SUCCESS", true, string.Empty);
+            await mediator.Send(successfulBackup);
 
-            // Set file name for the download
+            var fileBytes = Encoding.UTF8.GetBytes(content);
             var fileName = "database_backup.sql";
 
-            // Return the file as a download response with the appropriate MIME type
-            return Results.File(bytes, "application/sql", fileName);
-           })
-            .RequireAuthorization("AllRoles")
-            .WithOpenApi(operation =>
+            return Results.File(fileBytes, "application/sql", fileName);
+        }).RequireAuthorization("AllRoles").WithOpenApi(operation =>
             {
-                operation.Summary = "Create a database backup";  
+                operation.Summary = "Create a database backup";
                 operation.Description = "Triggers the creation of a database backup, ensuring data safety and recovery.";
                 return operation;
             })
-            .Produces<IResult<int>>(StatusCodes.Status200OK);
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
 
+        app.MapGet("/backup", async (IMediator mediator) =>
+        {
+            var result = await mediator.Send(new GetBackupQuery());
+            return Results.Ok(result);
+        })
+      .RequireAuthorization("AllRoles")
+      .WithName("GetBackupDetails")
+      .WithOpenApi(operation =>
+      {
+          operation.Summary = "Get database backup details";
+          operation.Description = "Retrieves the list of database backup records.";
+          return operation;
+      })
+      .Produces<IResult<IReadOnlyList<GetBackupQueryResponse>>>(StatusCodes.Status200OK);
 
         return app;
     }
