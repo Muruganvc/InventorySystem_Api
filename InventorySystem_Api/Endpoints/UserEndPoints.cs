@@ -363,7 +363,7 @@ public static class UserEndPoints
             {
                 var failedBackup = new BackupCommand("FAILED", false, content ?? "Unknown error");
                 await mediator.Send(failedBackup);
-                return Results.BadRequest("Failed to generate database backup.");
+                return Results.BadRequest("Failed to generate database backup. Please check Support team.");
             }
 
             var successfulBackup = new BackupCommand("SUCCESS", true, string.Empty);
