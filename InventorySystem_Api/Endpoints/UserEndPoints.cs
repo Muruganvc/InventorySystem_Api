@@ -1,8 +1,8 @@
 ﻿using InventorySystem_Api.Request;
-using InventorySystem_Application.Backup.BackupCommand;
-using InventorySystem_Application.Backup.GetBackupQuery;
 using InventorySystem_Application.Common;
 using InventorySystem_Application.Customer.GetCustomerQuery;
+using InventorySystem_Application.DatabaseBackupHistory.DatabaseBackupHistoryCommand;
+using InventorySystem_Application.DatabaseBackupHistoryCommand.DatabaseBackupHistoryQuery;
 using InventorySystem_Application.InventoryCompanyInfo.CreateInventoryCompanyInfoCommand;
 using InventorySystem_Application.InventoryCompanyInfo.GetInventoryCompanyInfoQuery;
 using InventorySystem_Application.InventoryCompanyInfo.UpdateInventoryCompanyInfoCommand;
@@ -361,12 +361,12 @@ public static class UserEndPoints
 
             if (!sqlContent.Value.status)
             {
-                var failedBackup = new BackupCommand("FAILED", false, content ?? "Unknown error");
+                var failedBackup = new DatabaseBackupHistoryCommand("FAILED", false, content ?? "Unknown error");
                 await mediator.Send(failedBackup);
                 return Results.BadRequest("Failed to generate database backup. Please check Support team.");
             }
 
-            var successfulBackup = new BackupCommand("SUCCESS", true, string.Empty);
+            var successfulBackup = new DatabaseBackupHistoryCommand("SUCCESS", true, string.Empty);
             await mediator.Send(successfulBackup);
 
             var fileBytes = Encoding.UTF8.GetBytes(content);
@@ -385,7 +385,7 @@ public static class UserEndPoints
 
         app.MapGet("/backup", async (IMediator mediator) =>
         {
-            var result = await mediator.Send(new GetBackupQuery());
+            var result = await mediator.Send(new DatabaseBackupHistoryQuery());
             return Results.Ok(result);
         })
       .RequireAuthorization("AllRoles")
@@ -396,7 +396,7 @@ public static class UserEndPoints
           operation.Description = "Retrieves the list of database backup records.";
           return operation;
       })
-      .Produces<IResult<IReadOnlyList<GetBackupQueryResponse>>>(StatusCodes.Status200OK);
+      .Produces<IResult<IReadOnlyList<DatabaseBackupHistoryQueryResponse>>>(StatusCodes.Status200OK);
 
         return app;
     }
