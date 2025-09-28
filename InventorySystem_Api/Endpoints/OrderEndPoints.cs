@@ -3,6 +3,8 @@ using InventorySystem_Application.Common;
 using InventorySystem_Application.Order.GetCustomerOrderSummaryQuery;
 using InventorySystem_Application.Order.GetOrdersummaryQuery;
 using InventorySystem_Application.Order.OrderCreateCommand;
+using InventorySystem_Application.PaymentHistory.CreatePaymentHistoryCommand;
+using InventorySystem_Application.PaymentHistory.GetPaymentHistoryQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -85,6 +87,46 @@ public static class OrderEndPoints
         })
         .Produces<IResult<IReadOnlyList<GetCustomerOrderSummaryQueryResponse>>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status400BadRequest);
+
+        //Create a payment history record
+        app.MapPost("/payment-history", async ([FromBody] CreatePaymentHistoryRequest payment, IMediator mediator) =>
+        {
+            var command = new CreatePaymentHistoryCommand(
+                payment.CustomerId,
+                payment.OrderId,
+                payment.PaymentMethod,
+                payment.AmountPaid,
+                payment.BalanceRemainingToPay,
+                payment.TransactionRefNo
+            );
+
+            var result = await mediator.Send(command);
+            return Results.Ok(result);
+        }).RequireAuthorization("AllRoles").WithName("CreatePaymentHistory")
+                .WithOpenApi(operation =>
+                {
+                    operation.Summary = "Create a payment history record";
+                    operation.Description = "Creates a new payment history entry for a customer's order.";
+                    return operation;
+                })
+                .Produces<IResult<bool>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status400BadRequest);
+
+        //Get payment history by order ID
+        app.MapGet("/payment-history/{orderId}", async (int orderId, IMediator mediator) =>
+        {
+            var query = new GetPaymentHistoryQuery(orderId);
+            var result = await mediator.Send(query);
+            return Results.Ok(result);
+        }).RequireAuthorization("AllRoles").WithName("GetPaymentHistory")
+                 .WithOpenApi(operation =>
+                 {
+                     operation.Summary = "Get payment history by order ID";
+                     operation.Description = "Retrieves the payment history for a specific customer order by order ID.";
+                     return operation;
+                 })
+                 .Produces<IResult<IReadOnlyList<GetPaymentHistoryQueryResponse>>>(StatusCodes.Status200OK)
+                 .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

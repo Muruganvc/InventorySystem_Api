@@ -9,14 +9,17 @@ internal sealed class OrderCreateCommandHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRepository<InventorySystem_Domain.Product> _productRepository;
+    private readonly IRepository<InventorySystem_Domain.PaymentHistory> _paymentRepository;
     private readonly IUserInfo _userInfo;
     public OrderCreateCommandHandler(IUnitOfWork unitOfWork,
         IRepository<InventorySystem_Domain.Product> productRepository,
-        IUserInfo userInfo)
+        IUserInfo userInfo,
+        IRepository<InventorySystem_Domain.PaymentHistory> paymentRepository)
     {
         _unitOfWork = unitOfWork;
         _productRepository = productRepository;
         _userInfo = userInfo;
+        _paymentRepository = paymentRepository;
     }
     public async Task<IResult<int>> Handle(OrderCreateCommand request, CancellationToken cancellationToken)
     {
@@ -117,8 +120,9 @@ internal sealed class OrderCreateCommandHandler
             newOrder.FinalAmount = finalAmount;
             newOrder.BalanceAmount = finalAmount - request.GivenAmount;
 
-            // No need to call Update() explicitly if tracked by EF Core
-            await _unitOfWork.SaveAsync(); // Single save for all changes
+            var paymentHistory = InventorySystem_Domain.PaymentHistory.Create(newOrder.OrderId, customerId, request.GivenAmount, "Cash Payments", "", newOrder.BalanceAmount ?? 0, _userInfo.UserId);
+            await _paymentRepository.AddAsync(paymentHistory);
+            await _unitOfWork.SaveAsync();
             newOrderId = newOrder.OrderId;
             return newOrderId;
         }, cancellationToken);

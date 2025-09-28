@@ -556,6 +556,35 @@ namespace InventorySystem_Infrastructure.DataBackup
             createScript.AppendLine("ON UPDATE NO ACTION ");
             createScript.AppendLine("ON DELETE NO ACTION);");
             createScript.AppendLine("TABLESPACE pg_default;");
+
+
+
+            createScript.AppendLine("-- ========================================");
+            createScript.AppendLine("-- Table: public.payment_history");
+            createScript.AppendLine("-- ========================================");
+
+            createScript.AppendLine("-- DROP TABLE IF EXISTS public.payment_history;");
+
+            createScript.AppendLine("CREATE TABLE IF NOT EXISTS public.payment_history ");
+            createScript.AppendLine("(payment_history_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,");
+            createScript.AppendLine("order_id INTEGER NOT NULL,");
+            createScript.AppendLine("customer_id INTEGER NOT NULL,");
+            createScript.AppendLine("amount_paid DECIMAL(12,2) NOT NULL,");
+            createScript.AppendLine("payment_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
+            createScript.AppendLine("payment_method VARCHAR(50) CHECK (payment_method IN (");
+            createScript.AppendLine(" 'Cash Payments', 'Cheque Payments',  'Online Payments' )),");
+            createScript.AppendLine("transaction_ref_no VARCHAR(100),");
+            createScript.AppendLine("balance_remaining_to_pay DECIMAL(12,2) NOT NULL,");
+            createScript.AppendLine("created_by INTEGER NOT NULL,");
+            createScript.AppendLine("CONSTRAINT fk_payment_history_order_id FOREIGN KEY (order_id) ");
+            createScript.AppendLine("REFERENCES public.orders (order_id) ");
+            createScript.AppendLine("ON UPDATE NO ACTION ON DELETE NO ACTION,");
+            createScript.AppendLine("CONSTRAINT fk_payment_history_customer_id FOREIGN KEY (customer_id)");
+            createScript.AppendLine("REFERENCES public.customers (customer_id) ");
+            createScript.AppendLine("ON UPDATE NO ACTION ON DELETE NO ACTION,");
+            createScript.AppendLine("fk_payment_history_created_by FOREIGN KEY (created_by) ");
+            createScript.AppendLine("REFERENCES public.users (user_id) ");
+            createScript.AppendLine("ON UPDATE NO ACTION ON DELETE NO ACTION,");
         }
 
         static void Order_ItemsAlter(StringBuilder alterScript)

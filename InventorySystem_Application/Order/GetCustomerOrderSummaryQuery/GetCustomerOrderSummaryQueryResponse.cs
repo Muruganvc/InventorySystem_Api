@@ -6,4 +6,6 @@ public record GetCustomerOrderSummaryQueryResponse(int OrderId,
     DateTime OrderDate,
     decimal TotalAmount,
     decimal FinalAmount,
-    decimal BalanceAmount);
+    decimal BalanceAmount,
+    int CustomerId
+   );

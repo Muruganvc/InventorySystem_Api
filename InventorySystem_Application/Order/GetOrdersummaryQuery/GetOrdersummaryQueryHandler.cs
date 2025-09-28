@@ -14,6 +14,7 @@ internal sealed class GetOrdersummaryQueryHandler
     private readonly IRepository<InventorySystem_Domain.Order> _orderRepository;
     private readonly IRepository<InventorySystem_Domain.Customer> _customerRepository;
     private readonly IRepository<InventorySystem_Domain.Company> _companyRepository;
+    private readonly IRepository<InventorySystem_Domain.PaymentHistory> _paymentHistoryRepository;
 
     public GetOrdersummaryQueryHandler(
         IRepository<InventorySystem_Domain.Company> companyRepository,
@@ -22,7 +23,8 @@ internal sealed class GetOrdersummaryQueryHandler
         IRepository<InventorySystem_Domain.OrderItem> orderItemRepository,
         IRepository<InventorySystem_Domain.Order> orderRepository,
         IRepository<InventorySystem_Domain.Customer> customerRepository,
-        IRepository<InventorySystem_Domain.ProductCategory> productCategoryRepository
+        IRepository<InventorySystem_Domain.ProductCategory> productCategoryRepository,
+        IRepository<InventorySystem_Domain.PaymentHistory> paymentHistoryRepository
     )
     {
         _companyRepository = companyRepository;
@@ -32,55 +34,63 @@ internal sealed class GetOrdersummaryQueryHandler
         _orderRepository = orderRepository;
         _customerRepository = customerRepository;
         _productCategoryRepository = productCategoryRepository;
+        _paymentHistoryRepository = paymentHistoryRepository;
     }
     public async Task<IResult<IReadOnlyList<GetOrdersummaryQueryResponse>>> Handle(GetOrdersummaryQuery request, CancellationToken cancellationToken)
     {
         var resultList = await _orderItemRepository.Table.AsNoTracking()
-                .Join(_productRepository.Table.AsNoTracking(),
-                    orderItem => orderItem.ProductId,
-                    product => product.ProductId,
-                    (orderItem, product) => new { orderItem, product })
-                .Join(_productCategoryRepository.Table.AsNoTracking(), 
-                    temp => temp.product.ProductCategoryId,
-                    productCategory => productCategory.ProductCategoryId,
-                    (temp, productCategory) => new { temp.orderItem, temp.product, productCategory })
-                .Join(_categoryRepository.Table.AsNoTracking(),
-                    temp => temp.productCategory.CategoryId,
-                    category => category.CategoryId,
-                    (temp, category) => new { temp.orderItem, temp.product, temp.productCategory, category })
-                .Join(_companyRepository.Table.AsNoTracking(),
-                    temp => temp.category.CompanyId,
-                    company => company.CompanyId,
-                    (temp, company) => new { temp.orderItem, temp.product, temp.productCategory, temp.category, company })
-                .Join(_orderRepository.Table.AsNoTracking().Where(order => order.OrderId == request.OrderId),
-                    temp => temp.orderItem.OrderId,
-                    order => order.OrderId,
-                    (temp, order) => new { temp.orderItem, temp.product, temp.productCategory, temp.category, temp.company, order })
-                .Join(_customerRepository.Table.AsNoTracking(),
-                    temp => temp.order.CustomerId,
-                    customer => customer.CustomerId,
-                    (temp, customer) => new GetOrdersummaryQueryResponse(
-                        temp.orderItem.ProductId,
-                        temp.product.ProductName,
-                        temp.orderItem.Quantity,
-                        temp.orderItem.UnitPrice,
-                        temp.orderItem.DiscountPercent,
-                        temp.orderItem.DiscountAmount,
-                        temp.orderItem.SubTotal,
-                        temp.orderItem.NetTotal,
-                        temp.order.OrderDate,
-                        temp.order.FinalAmount ?? 0,
-                        temp.order.TotalAmount ?? 0,
-                        temp.order.BalanceAmount ?? 0,
-                        customer.CustomerName,
-                        customer.Address,
-                        customer.Phone,
-                        temp.orderItem.CreatedUser.UserName,
-                        temp.orderItem.SerialNo,
-                        temp.order.IsGst,
-                        temp.orderItem.Meter ?? 0
-                    ))
-                .ToListAsync(cancellationToken);
+     .Join(_productRepository.Table.AsNoTracking(),
+         orderItem => orderItem.ProductId,
+         product => product.ProductId,
+         (orderItem, product) => new { orderItem, product })
+     .Join(_productCategoryRepository.Table.AsNoTracking(),
+         temp => temp.product.ProductCategoryId,
+         productCategory => productCategory.ProductCategoryId,
+         (temp, productCategory) => new { temp.orderItem, temp.product, productCategory })
+     .Join(_categoryRepository.Table.AsNoTracking(),
+         temp => temp.productCategory.CategoryId,
+         category => category.CategoryId,
+         (temp, category) => new { temp.orderItem, temp.product, temp.productCategory, category })
+     .Join(_companyRepository.Table.AsNoTracking(),
+         temp => temp.category.CompanyId,
+         company => company.CompanyId,
+         (temp, company) => new { temp.orderItem, temp.product, temp.productCategory, temp.category, company })
+     .Join(_orderRepository.Table.AsNoTracking().Where(order => order.OrderId == request.OrderId),
+         temp => temp.orderItem.OrderId,
+         order => order.OrderId,
+         (temp, order) => new { temp.orderItem, temp.product, temp.productCategory, temp.category, temp.company, order })
+     .Join(_customerRepository.Table.AsNoTracking(),
+         temp => temp.order.CustomerId,
+         customer => customer.CustomerId,
+         (temp, customer) => new { temp.orderItem, temp.product, temp.productCategory, temp.category, temp.company, temp.order, customer })
+     // 🔥 INNER JOIN with payment_history
+     .Join(_paymentHistoryRepository.Table.AsNoTracking(),
+         temp => new { temp.order.OrderId, temp.customer.CustomerId },
+         payment => new { payment.OrderId, payment.CustomerId },
+         (temp, payment) => new GetOrdersummaryQueryResponse(
+             temp.orderItem.ProductId,
+             temp.product.ProductName,
+             temp.orderItem.Quantity,
+             temp.orderItem.UnitPrice,
+             temp.orderItem.DiscountPercent,
+             temp.orderItem.DiscountAmount,
+             temp.orderItem.SubTotal,
+             temp.orderItem.NetTotal,
+             temp.order.OrderDate,
+             temp.order.FinalAmount ?? 0,
+             temp.order.TotalAmount ?? 0,
+             payment.BalanceRemainingToPay,
+             temp.customer.CustomerName,
+             temp.customer.Address,
+             temp.customer.Phone,
+             temp.orderItem.CreatedUser.UserName,
+             temp.orderItem.SerialNo,
+             temp.order.IsGst,
+             temp.orderItem.Meter ?? 0
+         )
+     )
+     .ToListAsync(cancellationToken);
+
         return Result<IReadOnlyList<GetOrdersummaryQueryResponse>>.Success(resultList.OrderBy(a => a.FullProductName).ToList());
     }
 }

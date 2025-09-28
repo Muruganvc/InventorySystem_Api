@@ -116,5 +116,6 @@ public class InventorySystemDbContext : DbContext
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
         modelBuilder.ApplyConfiguration(new BackupConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentHistoryConfiguration());
     }
 }
