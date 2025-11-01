@@ -27,8 +27,8 @@ internal sealed class GetCompanyWiseIncomeQueryHandler
         var result = await _orderItemRepository.Table
             .AsNoTracking()
                  .Where(ord =>
-                 ord.CreatedAt.Month == DateTime.Now.AddMonths(-1).Month &&
-                 ord.CreatedAt.Year == DateTime.Now.Year)
+                 ord.CreatedAt.Month == DateTime.UtcNow.AddMonths(-1).Month &&
+                 ord.CreatedAt.Year == DateTime.UtcNow.Year)
          .Join(_productRepository.Table.AsNoTracking(),
                  ord => ord.ProductId,
                  pro => pro.ProductId,
