@@ -130,7 +130,9 @@ namespace InventorySystem_Application.Users.LoginCommand.Common
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!));
+            //var expiration = DateTime.UtcNow.AddSeconds(double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!));
+
+            var expiration = DateTime.Now.AddHours(double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!));
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
