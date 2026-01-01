@@ -4,6 +4,7 @@ using InventorySystem_Application.Common;
 using InventorySystem_Application.Common.Mapper;
 using InventorySystem_Domain.Common;
 using InventorySystem_Infrastructure;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -12,20 +13,27 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+// Load JWT settings section
 var jwtSection = config.GetSection("JwtSettings");
+
+// Add DbContext with PostgreSQL
 builder.Services.AddDbContext<InventorySystemDbContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
+// Register repositories and unit of work
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserInfo, UserInfo>();
 
+// Add AutoMapper with profile(s)
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MappingProfile>();
 }, typeof(MappingProfile).Assembly);
 
+// Add MediatR and scan assemblies starting with "InventorySystem_"
 var assemblies = AppDomain.CurrentDomain.GetAssemblies()
     .Where(a => !a.IsDynamic && a.FullName!.StartsWith("InventorySystem_"))
     .ToArray();
@@ -35,6 +43,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(assemblies);
 });
 
+// Configure Authentication with JWT Bearer
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -50,10 +59,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
         };
 
-        // Custom error handling for unauthorized access
         options.Events = new JwtBearerEvents
         {
-            // This event is triggered when authentication fails (e.g., expired token)
             OnAuthenticationFailed = context =>
             {
                 if (context.Exception is SecurityTokenExpiredException)
@@ -62,71 +69,76 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
                 return Task.CompletedTask;
             },
-
-            // This event is triggered when the user is not authorized (i.e., missing/invalid token)
             OnChallenge = async context =>
             {
-                // Set the response status code to 401 (Unauthorized)
-                context.Response.StatusCode = 401;
+                // IMPORTANT: Add CORS headers here to avoid CORS blocking for 401 response
+                var origin = context.Request.Headers["Origin"].ToString();
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
+                    context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
 
-                // Set the content type to application/json
+                context.HandleResponse(); // Prevent default behavior
+
+                context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
 
-                // Write the custom response with Result<T> structure
                 var result = new
                 {
                     IsSuccess = false,
                     Error = "Token has expired or is invalid."
                 };
 
-                // Writing the response asynchronously
                 await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(result));
             }
         };
     });
 
-
-
-
-
+// Configure Authorization policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AllRoles", policy => policy.RequireRole("ADMIN", "SUPERADMIN", "User"));
+    options.AddPolicy("AllRoles", policy => policy.RequireRole("ADMIN", "SUPERADMIN", "USER"));
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN", "SUPERADMIN"));
     options.AddPolicy("UserOnly", policy => policy.RequireRole("USER"));
     options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole("SUPERADMIN"));
 });
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddCustomCors("http://localhost:4200");
-}
-else
-{
-    builder.Services.AddCustomCors("https://vennilaelectricals.onrender.com");
-}
+// Configure CORS - ensure the exact frontend origin is allowed
+builder.Services.AddCustomCors(builder.Environment.IsDevelopment()
+    ? "http://localhost:4200"
+    : "https://vennilaelectricals.onrender.com");
 
+// Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddCustomSwagger();
 
 var app = builder.Build();
+
+// Middleware pipeline order is crucial!
+
 app.UseRouting();
+
+// Enable CORS early - before auth middlewares
 app.UseCors("AllowFrontend");
+
+// Global Exception Handler (custom middleware)
 app.UseGlobalExceptionHandler();
+
+// Authentication & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
-
+// Swagger middleware (optional in production, typically in dev)
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-// Health Check (if implemented)
+// Health checks (if any)
 app.MapCustomHealthCheck();
 
-// Modular API Endpoints
+// Map API endpoints modularly
 app.MapUserEndpoints()
    .MapCompanyEndpoints()
    .MapCategoryEndpoints()

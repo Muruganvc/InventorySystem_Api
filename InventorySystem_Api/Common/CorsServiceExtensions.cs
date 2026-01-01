@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text.Json;
-using System.Windows.Input;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace InventorySystem_Api.Common;
+
 public static class CorsServiceExtensions
 {
+    /// <summary>
+    /// Global exception handler middleware
+    /// </summary>
     public static void UseGlobalExceptionHandler(this IApplicationBuilder app)
     {
         app.UseExceptionHandler(errorApp =>
@@ -27,8 +29,12 @@ public static class CorsServiceExtensions
                     {
                         context.Response.StatusCode,
                         Message = "Server failure",
-                        Exeception = error.Message,
+                        Exception = error.Message,
+#if DEBUG
+                        StackTrace = error.StackTrace
+#else
                         Detailed = error.InnerException?.Message
+#endif
                     });
 
                     await context.Response.WriteAsync(result);
@@ -36,22 +42,30 @@ public static class CorsServiceExtensions
             });
         });
     }
-    public static IServiceCollection AddCustomCors(this IServiceCollection services, string origin)
+
+    /// <summary>
+    /// Add CORS policy for frontend origins
+    /// </summary>
+    public static IServiceCollection AddCustomCors(this IServiceCollection services, params string[] origins)
     {
         services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins(origin)         // Ensure the frontend origin is correctly passed (e.g., http://localhost:4200)
-                      .AllowAnyHeader()           // Allow any headers (adjust as needed)
-                      .AllowAnyMethod()           // Allow any HTTP methods (adjust as needed)
-                      .AllowCredentials();       // Allow credentials (cookies, authorization tokens)
+                policy.WithOrigins(origins)      // ✅ multiple origins supported
+                      .AllowAnyHeader()         // ✅ allow all headers (including Authorization)
+                      .AllowAnyMethod()         // ✅ allow all HTTP methods
+                      .AllowCredentials();      // ✅ allow cookies / auth headers
             });
         });
 
         return services;
     }
 
+
+    /// <summary>
+    /// Add Swagger/OpenAPI with JWT Bearer support
+    /// </summary>
     public static IServiceCollection AddCustomSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen(options =>
@@ -60,15 +74,10 @@ public static class CorsServiceExtensions
             {
                 Version = "v1",
                 Title = "Inventory System API",
-                Description = "API documentation for Inventory Management System",
-                // Contact = new OpenApiContact
-                // {
-                //     Name = "Company Support",
-                //     Email = "vcmuruganmca@gmail.com",
-                //     Url = new Uri("https://www.facebook.com/vcmuruganmca")
-                // }
+                Description = "API documentation for Inventory Management System"
             });
 
+            // XML comments
             var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
             if (File.Exists(xmlPath))
@@ -76,6 +85,7 @@ public static class CorsServiceExtensions
                 options.IncludeXmlComments(xmlPath);
             }
 
+            // JWT Auth
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -83,28 +93,27 @@ public static class CorsServiceExtensions
                 Scheme = "Bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Enter your JWT token in the format: **Bearer &lt;your_token&gt;**"
+                Description = "Enter JWT token as: Bearer <your_token>"
             });
 
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
-
-            options.TagActionsBy(api =>
             {
-                return new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default" };
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
             });
+
+            // Tag actions by controller or group name
+            options.TagActionsBy(api =>
+                new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] ?? "Default" });
 
             options.DocInclusionPredicate((_, api) => true);
         });
@@ -112,14 +121,19 @@ public static class CorsServiceExtensions
         return services;
     }
 
+    /// <summary>
+    /// Generic CRUD endpoint mapper using MediatR
+    /// </summary>
     public static void MapCrudEndpoints<TCreateRequest, TUpdateRequest, TId, TCreateResponse, TUpdateResponse, TGetResponse>(
-    this WebApplication app, string baseRoute,
-    Func<TCreateRequest, IRequest<TCreateResponse>> createCommandFactory,
-    Func<TId, TUpdateRequest, IRequest<TUpdateResponse>> updateCommandFactory,
-    Func<TId, IRequest<TGetResponse>> getByIdQueryFactory,
-    Func<IRequest<IEnumerable<TGetResponse>>> getAllQueryFactory,
-    string tag = "Entity", string? policy = null 
-)
+        this WebApplication app,
+        string baseRoute,
+        Func<TCreateRequest, IRequest<TCreateResponse>> createCommandFactory,
+        Func<TId, TUpdateRequest, IRequest<TUpdateResponse>> updateCommandFactory,
+        Func<TId, IRequest<TGetResponse>> getByIdQueryFactory,
+        Func<IRequest<IEnumerable<TGetResponse>>> getAllQueryFactory,
+        string tag = "Entity",
+        string? policy = null
+    )
     {
         var createEndpoint = app.MapPost($"{baseRoute}", async (
             [FromBody] TCreateRequest request,
@@ -131,7 +145,7 @@ public static class CorsServiceExtensions
         .WithName($"Create{tag}")
         .WithOpenApi()
         .Produces<TCreateResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest);
+        .ProducesProblem(StatusCodes.Status400BadRequest);
 
         var updateEndpoint = app.MapPut($"{baseRoute}/{{id}}", async (
             TId id,
@@ -144,19 +158,19 @@ public static class CorsServiceExtensions
         .WithName($"Update{tag}")
         .WithOpenApi()
         .Produces<TUpdateResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest);
+        .ProducesProblem(StatusCodes.Status400BadRequest);
 
         var getByIdEndpoint = app.MapGet($"{baseRoute}/{{id}}", async (
             TId id,
             IMediator mediator) =>
         {
             var result = await mediator.Send(getByIdQueryFactory(id));
-            return Results.Ok(result);
+            return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName($"Get{tag}ById")
         .WithOpenApi()
         .Produces<TGetResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest);
+        .Produces(StatusCodes.Status404NotFound);
 
         var getAllEndpoint = app.MapGet($"{baseRoute}", async (
             IMediator mediator) =>
@@ -168,6 +182,7 @@ public static class CorsServiceExtensions
         .WithOpenApi()
         .Produces<IEnumerable<TGetResponse>>(StatusCodes.Status200OK);
 
+        // Apply authorization policy if provided
         if (!string.IsNullOrEmpty(policy))
         {
             createEndpoint.RequireAuthorization(policy);
