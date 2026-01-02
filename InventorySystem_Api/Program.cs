@@ -19,7 +19,14 @@ var jwtSection = config.GetSection("JwtSettings");
 
 // Add DbContext with PostgreSQL
 builder.Services.AddDbContext<InventorySystemDbContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        config.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 0
+            );
+        }));
 
 // Register repositories and unit of work
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
