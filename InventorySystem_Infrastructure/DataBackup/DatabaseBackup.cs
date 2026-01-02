@@ -530,7 +530,7 @@ namespace InventorySystem_Infrastructure.DataBackup
             createScript.AppendLine("bank_branch_ifsc            CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
             createScript.AppendLine("api_version                 CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
             createScript.AppendLine("ui_version                  CHARACTER VARYING(20)  COLLATE pg_catalog.\"default\" NOT NULL,");
-            createScript.AppendLine("qr_code                     BYTEA NOT NULL,");
+            createScript.AppendLine("qr_code                     BYTEA NULL,");
             createScript.AppendLine("is_active                   BOOLEAN NOT NULL DEFAULT FALSE,");
             createScript.AppendLine("CONSTRAINT inventory_company_info_pkey PRIMARY KEY (inventory_company_info_id)");
             createScript.AppendLine(")");
