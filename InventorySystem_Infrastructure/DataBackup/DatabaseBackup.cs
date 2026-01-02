@@ -570,7 +570,7 @@ namespace InventorySystem_Infrastructure.DataBackup
             createScript.AppendLine("    amount_paid DECIMAL(12,2) NOT NULL,");
             createScript.AppendLine("    payment_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,");
             createScript.AppendLine("    payment_method VARCHAR(50) CHECK (payment_method IN (");
-            createScript.AppendLine("        'Cash Payments', 'Cheque Payments', 'Online Payments' )),");
+            createScript.AppendLine("        'Cash Payments', 'Cheque Payments', 'Online Payments','Credit' )),");
             createScript.AppendLine("    transaction_ref_no VARCHAR(100),");
             createScript.AppendLine("    balance_remaining_to_pay DECIMAL(12,2) NOT NULL,");
             createScript.AppendLine("    created_by INTEGER NOT NULL,");
