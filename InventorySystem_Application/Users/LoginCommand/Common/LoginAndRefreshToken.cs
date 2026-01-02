@@ -64,6 +64,15 @@ namespace InventorySystem_Application.Users.LoginCommand.Common
                 .Select(ur => ur.RoleId)
                 .ToList();
 
+            bool isSuperAdmin = roleIds.Any(r => r == 1);
+            if (!isSuperAdmin)
+            {
+                if (user.RefreshToken != null && user.RefreshTokenExpiry != null)
+                {
+                    return ("Your previous session is still active. Please contact support.", null);
+                }
+            }
+
             var roles = await _roleRepository.GetListByAsync(r => roleIds.Contains(r.RoleId));
             var roleNames = roles.Select(r => r.RoleCode).ToList();
 

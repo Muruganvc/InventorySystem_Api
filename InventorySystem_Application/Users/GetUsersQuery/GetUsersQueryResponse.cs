@@ -9,7 +9,7 @@ public class GetUsersQueryResponse : IMapFrom<User>
     public string FirstName { get; set; } = default!;
     public string? LastName { get; set; }
     public string UserName { get; set; } = default!;
-    public string PasswordHash { get; set; } = default!;
+    //public string PasswordHash { get; set; } = default!;
     public string? Email { get; set; }
     public bool IsActive { get; set; }
     public DateTime PasswordLastChanged { get; set; }
@@ -23,10 +23,15 @@ public class GetUsersQueryResponse : IMapFrom<User>
     public int? ModifiedBy { get; set; }
     public DateTime? ModifiedDate { get; set; }
     public uint RowVersion { get; set; }
-
+    public bool IsSessionActive { get; set; }
     public void Mapping(Profile profile)
     {
-        profile.CreateMap<User, GetUsersQueryResponse>();
+        profile.CreateMap<User, GetUsersQueryResponse>()
+        .ForMember(
+            dest => dest.IsSessionActive,
+            opt => opt.MapFrom(src => src.RefreshToken != null && src.RefreshTokenExpiry != null)
+        );
+
     }
 }
 

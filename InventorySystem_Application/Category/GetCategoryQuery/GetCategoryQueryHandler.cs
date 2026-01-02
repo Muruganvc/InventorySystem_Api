@@ -1,5 +1,4 @@
 ﻿using InventorySystem_Application.Common;
-using InventorySystem_Application.Company.GetCompanyQuery;
 using InventorySystem_Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

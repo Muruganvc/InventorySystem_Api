@@ -19,6 +19,7 @@ using InventorySystem_Application.Users.GetRoleByUserQuery;
 using InventorySystem_Application.Users.GetUserQuery;
 using InventorySystem_Application.Users.GetUsersQuery;
 using InventorySystem_Application.Users.LoginCommand;
+using InventorySystem_Application.Users.LogoutCommand;
 using InventorySystem_Application.Users.PasswordChangeCommand;
 using InventorySystem_Application.Users.UpdateUserCommand;
 using MediatR;
@@ -397,6 +398,23 @@ public static class UserEndPoints
           return operation;
       })
       .Produces<IResult<IReadOnlyList<DatabaseBackupHistoryQueryResponse>>>(StatusCodes.Status200OK);
+
+
+        app.MapPut("/user/{userId}/session", async (int userId, IMediator mediator) =>
+        {
+            var result = await mediator.Send(new LogoutCommand(userId));
+            return Results.Ok(result);
+        })
+        .RequireAuthorization("SuperAdminOnly")
+        .WithName("UpdateUserSessionStatus")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Update user session status";
+            operation.Description = "Terminates the active session for a specific user.";
+            return operation;
+        })
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

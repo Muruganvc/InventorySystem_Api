@@ -70,4 +70,10 @@ public class User
         RefreshToken = refreshToken;
         RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(30);
     }
+
+    public void Logout()
+    {
+        RefreshToken = null;
+        RefreshTokenExpiry = null;
+    }
 }
