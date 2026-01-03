@@ -28,9 +28,6 @@ public sealed class GetUsersQueryHandler
         .ProjectTo<GetUsersQueryResponse>(_mapper.ConfigurationProvider)
         .OrderBy(u => u.FirstName)
         .ToListAsync(cancellationToken);
-
-
-
         return Result<IReadOnlyList<GetUsersQueryResponse>>.Success(users);
     }
 }

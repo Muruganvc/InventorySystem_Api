@@ -43,7 +43,7 @@ namespace InventorySystem_Application.Users.LoginCommand.Common
 
                 if (user == null) return ("Invalid Refresh token", null);
 
-                return await GenerateLoginResponse(user, cancellationToken); // Return if refresh token is valid
+                return await GenerateLoginResponse(user, true, cancellationToken); // Return if refresh token is valid
             }
 
             // Step 2: Handle login logic if login is required
@@ -53,23 +53,25 @@ namespace InventorySystem_Application.Users.LoginCommand.Common
             if (!BCrypt.Net.BCrypt.Verify(password, loginUser.PasswordHash))
                 return ("Invalid password", null);
 
-            return await GenerateLoginResponse(loginUser, cancellationToken); // Generate response for valid login user
+            return await GenerateLoginResponse(loginUser,false, cancellationToken); // Generate response for valid login user
         }
 
         private async Task<(string Error, LoginCommandResponse? Response)> GenerateLoginResponse(
-            InventorySystem_Domain.User user, CancellationToken cancellationToken)
+            InventorySystem_Domain.User user, bool isReLoad, CancellationToken cancellationToken)
         {
             // Fetch roles for the user
             var roleIds = (await _userRoleRepository.GetListByAsync(ur => ur.UserId == user.UserId))
                 .Select(ur => ur.RoleId)
                 .ToList();
-
-            bool isSuperAdmin = roleIds.Any(r => r == 1);
-            if (!isSuperAdmin)
+            if (isReLoad)
             {
-                if (user.RefreshToken != null && user.RefreshTokenExpiry != null)
+                bool isSuperAdmin = roleIds.Any(r => r == 1);
+                if (!isSuperAdmin)
                 {
-                    return ("Your previous session is still active. Please contact support.", null);
+                    if (user.RefreshToken != null && user.RefreshTokenExpiry != null)
+                    {
+                        return ("Your previous session is still active. Please contact support.", null);
+                    }
                 }
             }
 
