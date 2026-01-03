@@ -31,7 +31,7 @@ internal sealed class GetPaymentHistoryQueryHandler
                             pc => pc.p.OrderId,
                             o => o.OrderId,
                             (pc, o) => new GetPaymentHistoryQueryResponse(pc.c.CustomerName, o.FinalAmount ?? 0, pc.p.AmountPaid, pc.p.BalanceRemainingToPay,
-                            pc.p.PaymentAt, pc.p.PaymentMethod ?? "N/A", pc.p.TransactionRefNo ?? string.Empty, ""))
+                            o.OrderDate, pc.p.PaymentMethod ?? "N/A", pc.p.TransactionRefNo ?? string.Empty, ""))
                         .ToListAsync(cancellationToken);
             return Result<IReadOnlyList<GetPaymentHistoryQueryResponse>>.Success(result);
     }

@@ -3,7 +3,7 @@ public record GetPaymentHistoryQueryResponse(string CustomerName,
     decimal FinalAmount,
     decimal AmountPaid,
     decimal BalanceRemainingToPay,
-    DateTime PaymentAt,
+    DateTime OrderDate,
     string PaymentMethod,
     string TransactionRefNo,
     string UserName);

@@ -12,16 +12,16 @@ public class GetUsersQueryResponse : IMapFrom<User>
     //public string PasswordHash { get; set; } = default!;
     public string? Email { get; set; }
     public bool IsActive { get; set; }
-    public DateTime PasswordLastChanged { get; set; }
-    public DateTime PasswordExpiresAt { get; set; }
-    public bool IsPasswordExpired { get; set; }
-    public DateTime? LastLogin { get; set; }
+    //public DateTime PasswordLastChanged { get; set; }
+    //public DateTime PasswordExpiresAt { get; set; }
+    //public bool IsPasswordExpired { get; set; }
+    //public DateTime? LastLogin { get; set; }
     public string MobileNo { get; set; } = default!;
-    public byte[]? ProfileImage { get; set; }
-    public int CreatedBy { get; set; }
-    public DateTime CreatedDate { get; set; }
-    public int? ModifiedBy { get; set; }
-    public DateTime? ModifiedDate { get; set; }
+    //public byte[]? ProfileImage { get; set; }
+    //public int CreatedBy { get; set; }
+    //public DateTime CreatedDate { get; set; }
+    //public int? ModifiedBy { get; set; }
+    //public DateTime? ModifiedDate { get; set; }
     public uint RowVersion { get; set; }
     public bool IsSessionActive { get; set; }
     public void Mapping(Profile profile)
